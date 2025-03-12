@@ -12,3 +12,6 @@ post1.agregar_categoria('Ciencias')
 post1.agregar_categoria('Física')
 post1.eliminar_categoria('Ciencias')
 print(post1.obtener_categorias())
+post1.eliminar_categoria('Física')
+
+print(post1.mostrar_informacion())
