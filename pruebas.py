@@ -2,10 +2,10 @@ from publicaciones import Publicacion
 from oferta import Oferta
 from demanda import Demanda
 
-post1 = Oferta('a','a','a','a', 20, True)
+post1 = Oferta('a','a','a','user', 'aaa', 20)
 print(post1.mostrar_informacion())
 
-dem2 = Demanda('a','a','a','a', 20)
+dem2 = Demanda('a','a','a','aaa', 'a', 3)
 print(dem2.mostrar_informacion())
 
 post1.agregar_categoria('Ciencias')
