@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional
+from datetime import datetime
 
 class Publicacion(ABC):
     # Lista de categorías permitidas (puedes modificarla según necesites)
@@ -9,20 +10,13 @@ class Publicacion(ABC):
         "Tecnología", "Informática", "Programación", "Robótica", "Astronomía",
         "Deportes", "Salud", "Filosofía", "Psicología", "Economía"
     }
-    '''
-    @classmethod
-    def nueva_categoria(cls, categoria: str) -> None:
-        """Añade una categoría a la lista compartida."""
-        if categoria not in cls.categorias_permitidas:
-            cls.categorias_permitidas.append(categoria)
-    '''
 
-    def __init__(self, titulo: str, descripcion: str, fecha_publicacion: str, usuario) -> None:
-    def __init__(self, titulo: str, descripcion: str, fecha_publicacion: str, usuario: str, imagen: Optional[str] = None) -> None:
+    def __init__(self, titulo: str, descripcion: str, usuario: str, imagen: Optional[str] = None, fecha_publicacion: str = datetime.now().date()) -> None:
         self.titulo = titulo
         self.descripcion = descripcion
-        self.fecha_publicacion = fecha_publicacion
         self.usuario = usuario
+        self.imagen = imagen
+        self.fecha_publicacion = fecha_publicacion
         self.categorias = set()  # Usamos un set para evitar duplicados
 
     def agregar_categoria(self, categoria: str) -> None:
@@ -39,7 +33,6 @@ class Publicacion(ABC):
     def obtener_categorias(self) -> set:
         """Devuelve el conjunto de categorías."""
         return self.categorias
-        self.imagen = imagen
 
 # GESTIONAR LA FECHA DE LA CREACION DEL OBJETO. OPCION 1 CREARLO EN LA CLASE CON ALGUNA FUNCION, OPCION 2
     @abstractmethod
