@@ -22,11 +22,11 @@ class Consumer(User):
             an date that provides information about the time of the creation of certain account
         metodo_de_pago: str
             a preference of way of paying which is set to whether the consumer wants to buy with paypal, credit card...
-        servicios_contratados: list[Offer]
+        servicios_contratados: set[Offer]
             a list that contains the services bought, the services will be added through the contratar_servicios method
         pocket: int
             an int that represent the virtual pocket of an consumer (default 0)
-        demandas: list[Offer]
+        demandas: set[Offer]
             a list that contains all demands of a certain User
 
 
@@ -59,11 +59,11 @@ class Consumer(User):
                 a preference of way of paying which is set to whether the consumer wants to buy with paypal, credit card...
         """
         # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
-        super().__init__(username, nombre, password, email, telefono)
+        super().__init__(username, nombre, cy.hash_str(password), email, telefono)
         self.metodo_de_pago = metodo_de_pago
-        self.servicios_contratados:list[Offer] = []
+        self.servicios_contratados:set[Offer] = set()
         self.pocket = pocket
-        self.demandas: list[Offer] = []
+        self.demandas: set[Offer] = set()
 
     def agregar_una_demanda(self, titulo: str, descripcion: str, imagen: str, urgencia: int, publication_date:str=datetime.now().date()) -> None:
         """
@@ -83,7 +83,7 @@ class Consumer(User):
         publication_date:str
             a date when the demand was made (default is the current date)
          """
-        self.demandas.append(Demand(titulo, descripcion, self.username, imagen, urgencia, publication_date))
+        self.demandas.add(Demand(titulo, descripcion, self.username, imagen, urgencia, publication_date))
 
     def eliminar_una_demanda(self, titulo_no_deseado: str) -> None:
         """
@@ -107,6 +107,5 @@ class Consumer(User):
                 quitado = True
         if not quitado:
             print(f'El titulo que introduciste no esta en tus demandas')
-
 
 # METODO:CONTRATAR UN SERVICIO/POST

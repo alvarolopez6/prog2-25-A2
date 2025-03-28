@@ -75,8 +75,8 @@ class User:
         ------
         The password need to be implemented in hash system
         """
-        if antigua_contrasenya == self.password:
-            self.password = nueva_contrasenya
+        if cy.hash_str(antigua_contrasenya) == self.password:
+            self.password = cy.hash_str(nueva_contrasenya)
             print("Se ha cambiado tu contraseña de manera correcta")
         else:
             print("Por favor introduce tu contraseña antigua de manera correcta")

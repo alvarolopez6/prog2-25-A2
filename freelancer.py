@@ -1,5 +1,6 @@
 from datetime import datetime
 from user import User
+import crypto as cy
 
 class Freelancer(User):
     """
@@ -67,12 +68,12 @@ class Freelancer(User):
                 a list of numbers that represent the ratings of the customers
 
         """
-        super().__init__(username, nombre, password, email, telefono)
+        super().__init__(username, nombre, cy.hash_str(password), email, telefono)
         # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
         self.habilidades = habilidades
         self.opiniones = opiniones if opiniones is not None else []
         self.rating = sum(self.opiniones) / len(self.opiniones) if self.opiniones else 0
-        self.posts = []
+        self.posts:set[Offer] = set()
 
     def agregar_un_post(self, titulo: str, descripcion: str, imagen: str, precio: float, publicaction_date: str = datetime.now().date() ) -> None:
         """
@@ -97,7 +98,7 @@ class Freelancer(User):
         It uses the offer class to create posts and then add it to the freelancer posts list
 
         """
-        self.posts.append(Offer(titulo, descripcion, self.username, imagen, precio, publicaction_date))
+        self.posts.add(Offer(titulo, descripcion, self.username, imagen, precio, publicaction_date))
 
     def eliminar_un_post(self, titulo_no_deseado: str) -> None:
         """
