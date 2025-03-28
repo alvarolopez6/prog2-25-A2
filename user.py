@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Self
 
 class User:
     """
@@ -30,7 +31,7 @@ class User:
     """
 
 
-
+    user_set: set[Self] = set()
     def __init__(self, username: str, nombre: str, password: str, email: str, telefono: int) -> None:
         """
            Initializes an User instance
@@ -47,7 +48,6 @@ class User:
                 a string which provides more information about emails of users
            telefono: int
                 an int that represents the phone number of users
-
             """
         # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
         self.username = username
@@ -56,7 +56,7 @@ class User:
         self.email = email
         self.telefono = telefono
         self.fecha_creacion = datetime.now().date()
-
+        type(self).user_set.add(self)
 
 
     def cambiar_contrasenya(self, antigua_contrasenya: str, nueva_contrasenya: str) -> None:

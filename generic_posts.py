@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Self
 from datetime import datetime
 
 class Post(ABC):
@@ -42,6 +42,7 @@ class Post(ABC):
         "Sports", "Health", "Philosophy", "Psychology", "Economics"
     }
 
+    post_set: set[Self] = set()
     def __init__(self, title: str, description: str, user: str, image: Optional[str] = None) -> None:
         """
         Initializes a Publication instance.
@@ -63,6 +64,7 @@ class Post(ABC):
         self.image = image
         self.publication_date = datetime.now().date()
         self.categories = set()
+        type(self).post_set.add(self)
 
     def add_category(self, category: str) -> None:
         """
