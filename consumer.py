@@ -1,5 +1,8 @@
 from datetime import datetime
 from user import User
+from offer import Offer
+from demand import Demand
+import crypto as cy
 
 class Consumer(User):
     """
@@ -63,7 +66,7 @@ class Consumer(User):
         self.metodo_de_pago = metodo_de_pago
         self.servicios_contratados:set[Offer] = set()
         self.pocket = pocket
-        self.demandas: set[Offer] = set()
+        self.demandas: set[Demand] = set()
 
     def agregar_una_demanda(self, titulo: str, descripcion: str, imagen: str, urgencia: int, publication_date:str=datetime.now().date()) -> None:
         """
@@ -101,7 +104,7 @@ class Consumer(User):
         """
         quitado = False
         for i in self.demandas:
-            if i.titulo == titulo_no_deseado:
+            if i.title == titulo_no_deseado:
                 self.demandas.remove(i)
                 print(f'La demanda titulada: {titulo_no_deseado} ha sido eleminada')
                 quitado = True

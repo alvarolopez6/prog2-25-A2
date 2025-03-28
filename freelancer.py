@@ -1,6 +1,8 @@
 from datetime import datetime
 from user import User
 import crypto as cy
+from offer import Offer
+from demand import Demand
 
 class Freelancer(User):
     """
@@ -116,7 +118,7 @@ class Freelancer(User):
         """
         quitado = False
         for i in self.posts:
-            if i.titulo == titulo_no_deseado:
+            if i.title == titulo_no_deseado:
                 self.posts.remove(i)
                 print(f'El Post titulado: {titulo_no_deseado} ha sido eleminado')
                 quitado = True
