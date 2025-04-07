@@ -16,9 +16,7 @@ class Demand(Post):
         Displays the complete information of the demand.
     """
 
-    def __init__(self, title: str, description: str, user: str,
-                 image: Optional[str], urgency: int,
-                 publication_date: str = datetime.now().date()) -> None:
+    def __init__(self, title: str, description: str, user: str, image: Optional[str], urgency: int) -> None:
         """
         Initializes a Demand instance.
 

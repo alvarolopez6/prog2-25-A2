@@ -16,8 +16,7 @@ class Offer(Post):
         Displays the complete information of the offer.
     """
 
-    def __init__(self, title: str, description: str, user: str,
-                 image: Optional[str], price: float, publication_date: str = datetime.now().date()) -> None:
+    def __init__(self, title: str, description: str, user: str, image: Optional[str], price: float) -> None:
         """
         Initializes an Offer instance.
 

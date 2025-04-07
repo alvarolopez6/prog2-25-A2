@@ -89,10 +89,9 @@ class Post(ABC):
         -----
         If the category is not in `allowed_categories`, an error message is displayed.
         """
-        if category in self.allowed_categories:
-            self.category = category
-        else:
-            print(f'ERROR: The category "{category}" is not allowed')
+        if category not in self.allowed_categories:
+            raise ValueError(f'The category "{category}" is not allowed')
+        self.category = category
 
     def remove_category(self) -> None:
         """

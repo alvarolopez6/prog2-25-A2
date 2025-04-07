@@ -1,2 +1,4 @@
-a = None
-print('A' if a is not None else 'b')
+from generic_posts import *
+from demand import *
+from offer import *
+oferta = Offer('Titulo', 'Descripcion', 'Usuario', None, 0)
