@@ -33,6 +33,8 @@ class Path:
         Extracts the extension of the path if it is a file
     __add__(other: Path) -> Path
         Returns a new Path instance joining both paths
+    change_extension(new_extension: str) -> None:
+        Changes the file extension of the current path.
     """
 
     def __init__(self, path: str) -> None:
@@ -131,6 +133,20 @@ class Path:
             return self.path.suffix
         return None
 
+    def change_extension(self, new_extension: str) -> None:
+        """
+        Changes the file extension of the current path.
+
+        Parameters
+        ----------
+        new_extension: str
+            New extension of the path. (for example, '.csv')
+        """
+        if new_extension[0] != '.':
+            new_extension = '.' + new_extension
+
+        self.path = self.path.with_suffix(new_extension)
+
     def __add__(self, other: Self) -> Self:
         """
         Returns a new Path instance joining both paths
@@ -147,4 +163,4 @@ class Path:
         """
         if isinstance(other, Path):
             return Path(str(self.path / other.path))
-        return NotImplemented
+        return NotImplementedError

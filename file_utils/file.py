@@ -23,13 +23,14 @@ class File(ABC):
     -------
     is_empty -> bool
         Checks if the file is empty
-    delete() -> None
+    delete(erase_self: bool) -> None
         Deletes the file
-    read() -> str
+    read -> None
         Reads the file's content (Must be implemented by subclasses)
     write(content: str) -> None
         Writes content into the file (Must be implemented by subclasses)
     """
+
     def __init__(self, path: Path | str) -> None:
         """
         Initializes a File instance
@@ -41,6 +42,7 @@ class File(ABC):
         """
         self.path = Path(path) if type(path) == str else path
 
+    @property
     def is_empty(self) -> bool:
         """
         Checks if the file is empty (file must exist)
@@ -68,14 +70,11 @@ class File(ABC):
             del self
 
     @abstractmethod
-    def read(self) -> str | list[str]:
+    def read(self) -> None:
         """
         Reads the file's content (Must be implemented by subclasses)
 
-        Returns
-        -------
-        str | list[str]
-            String or list of strings that represent the file's content
+        NOTE: Subclasses must have 'data' attribute, otherwise this method should return list[str] or str
         """
         pass
 
