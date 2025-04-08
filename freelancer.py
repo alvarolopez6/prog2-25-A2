@@ -1,6 +1,4 @@
-from datetime import datetime
 from user import User
-import crypto as cy
 from offer import Offer
 from demand import Demand
 
@@ -11,22 +9,22 @@ class Freelancer(User):
 
         Attributes
         ----------
-        username: str
+        _username: str
             an unique string used to identify objects from others
         nombre: str
             the name of the user
-        password: str
+        _password: str
             an unique code that allows you to access to a certain account
         email: str
             a string which provides more information about emails of users
-        telefono: int
+        telefono: str
             an int that represents the phone number of users
-        fecha_creacion: datetime
-            an date that provides information about the time of the creation of certain account
         habilidades: list[str]
             a list with all the perks that the freelancer have
         opiniones: list[int]
             a list of numbers that represent the ratings of the customers
+        demandas_contratadas: set[Demand]
+            a list that contains the Demands accepted, the services will be added through the contratar_demand method
         rating: int
             a number that represent the mean of all the opinions
         posts: list[Oferta]
@@ -43,12 +41,15 @@ class Freelancer(User):
         agregar_resenya(resenya:int) -> None
             A method that allows you to append a new rating and calculate again the new rating mean
 
+        contratar_demanda(self,demanda) -> None
+            A Method that allows to accept a demand from a costumer
+
         mostrar_info() -> None
             Display the full public information about the freelancer
         """
 
 
-    def __init__(self, username:str, nombre:str, password:str, email:str, telefono:int, habilidades:list[str], opiniones: list[int]=None) -> None:
+    def __init__(self, username:str, nombre:str, password:str, email:str, telefono:str=None, habilidades:list[str]=None, opiniones: list[int]=None) -> None:
         """
             Initializes a Freelancer instance
 
@@ -62,7 +63,7 @@ class Freelancer(User):
                 an unique code that allows you to access to a certain account (hash system)
             email: str
                 a string which provides more information about emails of users
-            telefono: int
+            telefono: str
                 an int that represents the phone number of users
             habilidades: list[str]
                 a list with all the perks that the freelancer have
@@ -70,14 +71,14 @@ class Freelancer(User):
                 a list of numbers that represent the ratings of the customers
 
         """
-        super().__init__(username, nombre, cy.hash_str(password), email, telefono)
+        super().__init__(username, nombre, password, email, telefono)
         # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
         self.habilidades = habilidades
+        self.demandas_contratadas:set[Demand] = set()
         self.opiniones = opiniones if opiniones is not None else []
         self.rating = sum(self.opiniones) / len(self.opiniones) if self.opiniones else 0
-        self.posts:set[Offer] = set()
 
-    def agregar_un_post(self, titulo: str, descripcion: str, imagen: str, precio: float, publicaction_date: str = datetime.now().date() ) -> None:
+    def agregar_un_post(self, titulo: str, descripcion: str, imagen: str, precio: float) -> None:
         """
         A Method that is used to create a post/oferta object and add it directly to the freelancer posts.Works the same
         way as uploading to social media.
@@ -92,15 +93,13 @@ class Freelancer(User):
             Image associated with the offer.
         precio : float
             Price of the offer.
-        publicaction_date: str
-            Introduces the date on which the publication was made (default current date)
 
         Notes
         ------
         It uses the offer class to create posts and then add it to the freelancer posts list
 
         """
-        self.posts.add(Offer(titulo, descripcion, self.username, imagen, precio, publicaction_date))
+        self.posts.add(Offer(titulo, descripcion, self._username, imagen, precio))
 
     def eliminar_un_post(self, titulo_no_deseado: str) -> None:
         """
@@ -151,4 +150,13 @@ class Freelancer(User):
         print(f'Rating: {self.rating}')
         print(f'NºPosts: {len(self.posts)}')
 
-    # METODO:NECESITA CONTRATAR UNA DEMANDA
+    def contratar_demanda(self,demanda):
+        """
+        A Method that allows to accept a demand from an costumer
+
+        Parameters
+        -----------
+        demanda: Demand
+            An object from class Demand that represents demands
+        """
+        self.demandas_contratadas.add(demanda)
