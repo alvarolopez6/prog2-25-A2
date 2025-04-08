@@ -7,7 +7,6 @@ Author: Ismael Escribano
 Creation Date: 29-03-2025
 """
 from pathlib import Path as pl
-from typing import Self
 
 
 class Path:
@@ -62,12 +61,12 @@ class Path:
 
     def __repr__(self) -> str:
         """
-        Returns a more repr representation of a Path instance.
+        Returns a repr representation of a Path instance.
 
         Returns
         -------
         str
-            String repr representation of a Path instance.
+            String with repr representation of a Path instance.
         """
         return f"Path({self.path})"
 
@@ -115,7 +114,7 @@ class Path:
         Returns
         -------
         bool
-            True if the path refers to a file, False otherwise.
+            True if the path refers to a file, and it exists, False otherwise.
         """
         return self.path.is_file()
 
@@ -146,21 +145,3 @@ class Path:
             new_extension = '.' + new_extension
 
         self.path = self.path.with_suffix(new_extension)
-
-    def __add__(self, other: Self) -> Self:
-        """
-        Returns a new Path instance joining both paths
-
-        Parameters
-        ----------
-        other: Path
-            Path to be added.
-
-        Returns
-        -------
-        Path
-            New Path instance with both paths joined.
-        """
-        if isinstance(other, Path):
-            return Path(str(self.path / other.path))
-        return NotImplementedError

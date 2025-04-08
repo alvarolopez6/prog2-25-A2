@@ -10,6 +10,27 @@ import csv
 
 from . import Path
 from .file import File
+from typing import Self
+
+class NoHeadersFound(Exception):
+    """
+    Exception raised when headers are not define when writing data to a CSV file.
+    """
+    def __str__(self) -> str:
+        return 'NoHeadersFound Exception: Headers are not defined in CSV file.'
+
+class NotEnoughColumns(Exception):
+    """
+    Exception raised when there is more data than headers when writing to a CSV file
+    """
+
+    def __init__(self, num_data: int, num_col: int, *args) -> None:
+        super().__init__(*args)
+        self.num_data = num_data
+        self.num_col = num_col
+
+    def __str__(self) -> str:
+        return f'NotEnoughColumns Exception: {self.num_data} elements for {self.num_col} columns'
 
 class CSVFile(File):
     """
@@ -32,9 +53,14 @@ class CSVFile(File):
         Writes a single row into a CSV file (headers must exist)
     read -> None
         Reads the CSV file if it exists
+    clear() -> None
+        Clears all the CSV file data, also resets 'data' and 'headers' attributes
     __str__() -> str
         Returns the string representation of the CSV file.
+    from_dict(path: Path | str, data: dict[str, list[str]]) -> Self:
+        Creates a CSVFile instance from a dictionary and writes data on it
     """
+
     def __init__(self, path: Path | str) -> None:
         """
         Initializes a CSVFile instance
@@ -63,7 +89,6 @@ class CSVFile(File):
             writer  = csv.DictWriter(csv_file, fieldnames=fieldnames)
             self.headers = fieldnames
             writer.writeheader()
-        return None
 
     def write(self, content: list[str]) -> None:
         """
@@ -75,10 +100,12 @@ class CSVFile(File):
             List that contains a row data to be written (headers must exist)
         """
         if not self.headers:
-            raise NotImplementedError("Headers must exist before writing.")
-        mode = 'a' if self.path.exists else 'w'
+            raise NoHeadersFound
 
-        with open(str(self.path), mode=mode, newline='', encoding='utf-8') as csv_file:
+        if len(content) > len(self.headers):
+            raise NotEnoughColumns(len(self.headers), len(content))
+
+        with open(str(self.path), mode='a', newline='', encoding='utf-8') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=self.headers)
             row: dict = {}
             for i in range(len(content)):
@@ -87,9 +114,31 @@ class CSVFile(File):
                 except IndexError:
                     row[self.headers[i]] = None
             writer.writerow(row)
-        return None
 
-    @property
+    def write_rows(self, rows: list[list[str]]) -> None:
+        """
+        Writes multiple rows into the CSV file
+
+        Parameters
+        ----------
+        rows: list[list[str]]
+            List that contains all rows to be written (headers must exist)
+        """
+        if not self.headers:
+            raise NoHeadersFound
+        with open(str(self.path), mode='a', newline='', encoding='utf-8') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=self.headers)
+            for row in rows:
+                if len(row) > len(self.headers):
+                    raise NotEnoughColumns(len(self.headers), len(row))
+                row_dict: dict = {}
+                for i in range(len(row)):
+                    try:
+                        row_dict[self.headers[i]] = row[i]
+                    except IndexError:
+                        row_dict[self.headers[i]] = None
+                writer.writerow(row_dict)
+
     def read(self) -> None:
         """
         Reads the CSV file if it exists, it appends CSV's data into 'self.data'
@@ -104,7 +153,40 @@ class CSVFile(File):
                         cont += 1
                     else:
                         self.data.append(row)
-        return None
+
+    def clear(self) -> None:
+        """
+        Clears all CSV file data, also resets 'self.data' and 'self.headers'
+        """
+        super().clear()
+        self.headers = []
+        self.data = []
+
+    @classmethod
+    def from_dict(cls, path: Path | str, data: dict[str, list[str]]) -> Self:
+        """
+        Creates a CSVFile instance from a dictionary and writes data on it
+
+        Parameters
+        ----------
+        path: Path | str
+            System path to file, it must end with '.csv'
+        data: dict[str, list[str]]
+            Dictionary that contains all CSV data, keys are headers and values are all rows data for that header
+
+        Returns
+        -------
+        CSVFile instance
+        """
+        headers = list(data.keys())
+        rows: list[list[str]] = []
+        for i in data.values():
+            rows.append(i)
+
+        csv_file = cls(path)
+        csv_file.write_headers(headers)
+        csv_file.write_rows(rows)
+
 
     def __str__(self) -> str:
         """

@@ -23,7 +23,9 @@ class File(ABC):
     -------
     is_empty -> bool
         Checks if the file is empty
-    delete(erase_self: bool) -> None
+    clear() -> None
+        Clears the file's data
+    delete() -> None
         Deletes the file
     read -> None
         Reads the file's content (Must be implemented by subclasses)
@@ -54,20 +56,20 @@ class File(ABC):
         """
         return self.path.exists and self.path.path.stat().st_size == 0
 
-    def delete(self, erase_self: bool = False) -> None:
+    def clear(self) -> None:
+        """
+        Clears the file's data
+        """
+        with open(str(self.path), mode='w', encoding='utf-8'):
+            pass
+
+    def delete(self) -> None:
         """
         Deletes the file if it exists.
-        It can also delete the instance
-
-        Parameters
-        ----------
-        erase_self: bool
-            Deletes the self instance if True. Default is False
         """
         if self.path.exists:
             self.path.path.unlink(missing_ok=True)
-        if erase_self:
-            del self
+        return None
 
     @abstractmethod
     def read(self) -> None:
