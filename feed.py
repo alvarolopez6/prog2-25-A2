@@ -1,23 +1,50 @@
 import time
 import threading
+from pruebas import Schema, SixerrDB
 from unicodedata import category
-
 from offer import *
 from demand import *
 
-
-all_posts = []
-
-# 🔹 Función para filtrar publicaciones según el tipo
-def filter_posts(post_type):
+def fetch_posts_from_db(post_type: str = 'all'):
     """
-    Returns a filtered list of posts based on the selected type
+    Carga las publicaciones desde la base de datos.
+    Devuelve una lista de objetos Offer o Demand.
     """
-    if post_type == "offer":
-        return [post for post in all_posts if isinstance(post, Offer)]
-    elif post_type == "demand":
-        return [post for post in all_posts if isinstance(post, Demand)]
-    return all_posts
+
+    query = """
+        SELECT posts.id, users.username, posts.title, posts.description, posts.image
+        FROM posts
+        JOIN users ON posts.user = users.id
+    """
+
+    if post_type == 'offer':
+        query += " JOIN freelancers ON posts.user = freelancers.id"
+    elif post_type == 'demand':
+        query += " JOIN consumers ON posts.user = consumers.id"
+
+    success, cursor = db.query(query)
+
+    if not success:
+        print("❌ Error al obtener datos de la base de datos.")
+        return []
+
+    rows = cursor.fetchall()
+    posts = []
+
+    for row in rows:
+        post_id, username, title, description, image = row
+
+        if post_type == 'offer':
+            posts.append(Offer(post_id, username, title, description, image))
+        elif post_type == 'demand':
+            posts.append(Demand(post_id, username, title, description, image))
+        else:
+            # Intentamos deducir el tipo desde la base de datos (mejorable si agregas una columna tipo)
+            posts.append(Offer(post_id, username, title, description, image))
+
+    return posts
+
+
 
 # 🔹 Función para escuchar el teclado y detener el feed automático
 def listen_keyboard(stop_feed):
@@ -94,8 +121,9 @@ def show_manual_feed(posts):
 
 if __name__ == '__main__':
     # Select post type
-    post_type = input("Choose post type: 'offer' for Offers, 'demand' for Demands, 'all' for everything: ").strip().lower()
-    filtered_posts = filter_posts(post_type)
+    post_type = input(
+        "Choose post type: 'offer' for Offers, 'demand' for Demands, 'all' for everything: ").strip().lower()
+    filtered_posts = fetch_posts_from_db(post_type)
 
     # Select feed mode
     mode = input("Choose feed mode: 'auto' for automatic, 'manual' for manual: ").strip().lower()
