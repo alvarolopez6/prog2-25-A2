@@ -36,8 +36,6 @@ class Offer(Post):
         """
         super().__init__(title, description, user, image)
         self.price = price
-        global all_posts  # Accedemos a la lista global
-        all_posts.append(self)
 
     def display_information(self) -> str:
         """
