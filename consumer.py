@@ -38,6 +38,9 @@ class Consumer(User):
 
         contratar_servicio(post:Offer)->None
             Allows to get a service with is an Offer Object.
+
+        mostrar_info()->str
+            En extended version of User Mostar info method, that shows informations about an consumer
         """
     def __init__(self, username: str, nombre: str, password: str, email: str, telefono: str= None, metodo_de_pago: str = None,
                  pocket: int=0) -> None:
@@ -116,6 +119,15 @@ class Consumer(User):
                     An object from class Offer that represents offer
                 """
         self.servicios_contratados.add(post)
+
+    def mostrar_info(self) -> str:
+        """
+
+        Method that uses the super info from User and extend it with its own information
+
+        """
+        info=super().mostrar_info()
+        return info + f' metodo de pago: {self.metodo_de_pago} Pocket: {self.pocket}'
 
 
 consumer1=Consumer("juan06","pedro","1234","juanceto07@gmail.com", "78566321", "Visa")

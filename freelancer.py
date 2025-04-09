@@ -139,16 +139,14 @@ class Freelancer(User):
         print("HAS AÑADIDO LA RESEÑA CON")
         self.rating = sum(self.opiniones) / len(self.opiniones)
 
-    def mostrar_info(self) -> None:
+    def mostrar_info(self) -> str:
         """
 
         Method that uses the super info from User and extend it with its own information
 
         """
-        super().mostrar_info()
-        print(f'Habilidades: {self.habilidades}')
-        print(f'Rating: {self.rating}')
-        print(f'NºPosts: {len(self.posts)}')
+        info=super().mostrar_info()
+        return info + f' Habilidades: {self.habilidades} Rating: {self.rating} NºPosts: {len(self.posts)}'
 
     def contratar_demanda(self,demanda):
         """

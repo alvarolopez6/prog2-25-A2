@@ -1,24 +1,12 @@
 
-from ipywidgets import Password
+
 
 import crypto as cy
-from flask_jwt_extended import (
-    JWTManager, create_access_token, jwt_required,
-    get_jwt_identity, get_jwt
-)
-from typing import Self
+
 
 from generic_posts import Post
 
-
-class WrongPass(Exception):
-    def __init__(self,username):
-        self.username=username
-
-    def __str__(self):
-        return f'Wrong Password For Username:{self.username}'
-
-
+"""
 @register(
     table='users',
     map={'username':'_username',
@@ -27,6 +15,7 @@ class WrongPass(Exception):
          'email':'email',
          'phone':'telefono'}
 )
+"""
 class User:
     """
     Main Clase to represent an User
@@ -53,7 +42,7 @@ class User:
     mostrar_info() -> None
         Shows informaion about a specific account
     """
-    usuarios: dict[str, Self] ={}
+    usuarios: dict ={}
 
 
     def __init__(self, username: str, nombre: str, password: str, email: str, telefono: str=None) -> None:
@@ -81,26 +70,27 @@ class User:
         self.email = email
         self.telefono = telefono
         self.posts: set[Post] = set()
-        type(self).usuarios[username]=self
+        User.usuarios[username]=self
 
     @property
     def username(self):
         return self._username
 
+
+
     @classmethod
-    def get_user(cls, username: str) -> Self | None:
+    def get_user(cls, username: str):
         if username in cls.usuarios:
             return cls.usuarios[username]
 
     @property
     def password(self):
-        raise AttributeError() # Usar error propio WriteOnly
+        return self._password
 
     @password.setter
-    def password(self, value: tuple[str, str]) -> None:
+    def password(self, value: str) -> None:
         """
-        A Method that allows you to change password using your old passowrd as a verificaction of identity
-        if the old password introduced not the same as the current one, it wont be changed.
+        A Method that allows you to change password into an hash string system
 
         Parameters
         ----------
@@ -110,32 +100,56 @@ class User:
         ------
         The password need to be implemented in hash system
         """
-        old_pass, new_pass = value[0],value[1]
-        if cy.hash_str(old_pass) == self._password:
-            self._password = cy.hash_str(new_pass)
-            print("Se ha cambiado tu contraseña de manera correcta")
-        else:
-            raise WrongPass(self._username)
+        self._password=cy.hash_str(value)
 
 
-    def login(self,password) -> str:
-        if self._password == cy.hash_str(password):
-            return create_access_token(identity = self._username)
-        else:
-            raise WrongPass(self._username)
+    @staticmethod
+    def secure_password(password: str) -> bool:
+        """
+        Validates if a password is secure enough following criteria:
+        - At least 8 characters, 1 lowercase letter, 1 uppercase letter, 1 number and 1 special character.
+        - At most 64 characters
+        - No whitespace characters
 
-    @classmethod
+        Parameters
+        ----------
+        password: str
+            Password to validate.
 
-    def register(cls, *args, **kwargs):
-        cls(*args, **kwargs)
+        Returns
+        -------
+        bool
+            True if password is secure, False otherwise.
+        """
+        if not 8 <= len(password) <= 64:
+            return False
+
+        if ' ' in password:
+            return False
+
+        has_lower = False
+        has_upper = False
+        has_digit = False
+        has_special = False
+        special_characters = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+
+        for char in password:
+            if char.islower():
+                has_lower = True
+            elif char.isupper():
+                has_upper = True
+            elif char.isdigit():
+                has_digit = True
+            elif char in special_characters:
+                has_special = True
+
+        return has_lower and has_upper and has_digit and has_special
 
 
-    def mostrar_info(self) -> None:
+
+    def mostrar_info(self) -> str:
         """
         Displays the complete public information about an account.
 
         """
-        print(f'Usuario: {self._username}')
-        print(f'Nombre: {self.nombre}')
-        print(f'Email: {self.email}')
-        print(f'Telefono: {self.telefono}')
+        return f'Usuario: {self._username} Nombre: {self.nombre} Email: {self.email} Telefono: {self.telefono}'
