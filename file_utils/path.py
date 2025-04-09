@@ -20,6 +20,10 @@ class Path:
 
     Methods
     -------
+    __str__() -> str
+        Returns the string representation of the path
+    __repr__() -> str
+        Returns the repr representation of the path
     is_absolute() -> bool
         Verifies if the path is an absolute path
     absolute() -> str
@@ -109,7 +113,7 @@ class Path:
     @property
     def is_file(self) -> bool:
         """
-        Verifies if the paths refers to a file
+        Verifies if the paths refers to a file (path must exist)
 
         Returns
         -------
@@ -134,7 +138,7 @@ class Path:
 
     def change_extension(self, new_extension: str) -> None:
         """
-        Changes the file extension of the current path.
+        Changes the file extension of the system path.
 
         Parameters
         ----------

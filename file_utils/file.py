@@ -69,14 +69,13 @@ class File(ABC):
         """
         if self.path.exists:
             self.path.path.unlink(missing_ok=True)
-        return None
 
     @abstractmethod
     def read(self) -> None:
         """
         Reads the file's content (Must be implemented by subclasses)
 
-        NOTE: Subclasses must have 'data' attribute, otherwise this method should return list[str] or str
+        NOTE: Subclasses must have 'data' attribute, otherwise this method should return a Sequence or str
         """
         pass
 
