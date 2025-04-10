@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 from datetime import datetime
+from file_utils import CSVFile
 '''
 @Database.register(
     table='posts',
@@ -51,7 +52,6 @@ class Post(ABC):
         Abstract method to be implemented by child classes.
     """
 
-
     allowed_categories = {
         "Mathematics", "Science", "Physics", "Chemistry", "Biology",
         "History", "Geography", "Literature", "Art", "Music",
@@ -60,8 +60,6 @@ class Post(ABC):
     }
     identification = 0
     posts: dict = {}
-
-    #posts: dict[str, set] = {}
 
     def __init__(self, title: str, description: str, user: str, image: Optional[str] = None) -> None:
         """
@@ -120,6 +118,17 @@ class Post(ABC):
             Associated category.
         """
         return self.category
+
+    def export_post(self) -> None:
+        """
+        Gets a post data and exports it to a CSV file
+        """
+        post_keys: list[str] = [key for key in self.__dict__.keys()]
+        post_values: list[str] = [value for value in self.__dict__.values()]
+        file_name = f'{self.title}_{datetime.now().strftime("%Y%m%d")}.csv'
+        f = CSVFile(f'data/{file_name}')
+        f.write_headers(post_keys)
+        f.write(post_values)
 
     @abstractmethod
     def display_information(self) -> str:
