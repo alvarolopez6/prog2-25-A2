@@ -1,11 +1,6 @@
-
-
-
 import crypto as cy
-
-
 from generic_posts import Post
-from file_utils import CSVFile
+from file_utils import CSVFile, Path
 from datetime import datetime
 """
 @register(
@@ -33,14 +28,24 @@ class User:
         a string which provides more information about emails of users
     telefono: str
         an int that represents the phone number of users
+    posts: set[Post]
+        an set that contains all the posts publicated by that user
+
+    Class_Attributes
+    ----------
+    usuarios: dict[username]=Self:
+        an dictionary that uses the username as key and the object User as value
 
 
     Methods
     ---------
-    cambiar_contrasenya(antigua_contrasenya: str ,nueva_contrasenya: str) -> None
-        Introduce an old passowrd of an account in order to change it
-
-    mostrar_info() -> None
+    secure_password() -> Bool:
+        Verifies if the password complete certain creiteria
+    export_user() -> Path
+        Exports all user's information into a CSV file
+    valid_email() -> Bool:
+        Verifies if the email contains the correct format
+    mostrar_info() -> str
         Shows informaion about a specific account
     """
     usuarios: dict ={}
@@ -48,23 +53,21 @@ class User:
 
     def __init__(self, username: str, nombre: str, password: str, email: str, telefono: str=None) -> None:
         """
-           Initializes an User instance
+        Initializes an User instance
 
-           Parameters
-           ----------
-           username: str
-                an unique string used to identify objects from others
-           nombre: str
-                the name of the user
-           password: str
-                an unique code that allows you to access to a certain account (hash system)
-           email: str
-                a string which provides more information about emails of users
-           telefono: str
-                an int that represents the phone number of users
-
-            """
-        # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
+        Parameters
+        ----------
+        username: str
+            an unique string used to identify objects from others
+        nombre: str
+            the name of the user
+        password: str
+            an unique code that allows you to access to a certain account (hash system)
+        email: str
+            a string which provides more information about emails of users
+        telefono: str
+            an int that represents the phone number of users
+        """
 
         self._username = username #Lectura
         self.nombre = nombre
@@ -189,9 +192,14 @@ class User:
 
         return has_lower and has_upper and has_digit and has_special
 
-    def export_user(self) -> None:
+    def export_user(self) -> Path:
         """
         Gets user's info and exports it to a CSV file.
+
+        Returns
+        -------
+        Path
+            System path to the file
         """
         user_keys: list[str] = [key for key in self.__dict__.keys() if key != '_password']
         user_values: list[str] = [value for key, value in self.__dict__.items() if key != '_password']
@@ -199,6 +207,7 @@ class User:
         f = CSVFile(f'data/{file_name}')
         f.write_headers(user_keys)
         f.write(user_values)
+        return f.path.absolute
 
 
     def mostrar_info(self) -> str:

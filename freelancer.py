@@ -32,12 +32,6 @@ class Freelancer(User):
 
         Methods
         ---------
-        agregar_un_post(titulo: str, descripcion: str, imagen: str, precio: float)-> None
-            An Method that creates an object Oferta and adds it to the freelancer posts
-
-        eliminar_un_post( titulo_no_deseado:str ) -> None
-            A function that allows you to remove an oferta objects from freelancer's posts through its title
-
         agregar_resenya(resenya:int) -> None
             A method that allows you to append a new rating and calculate again the new rating mean
 
@@ -72,57 +66,10 @@ class Freelancer(User):
 
         """
         super().__init__(username, nombre, password, email, telefono)
-        # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
         self.habilidades = habilidades
-        self.demandas_contratadas:set[Demand] = set()
+        self.demandas_contratadas: set[Demand] = set()
         self.opiniones = opiniones if opiniones is not None else []
         self.rating = sum(self.opiniones) / len(self.opiniones) if self.opiniones else 0
-
-    def agregar_un_post(self, titulo: str, descripcion: str, imagen: str, precio: float) -> None:
-        """
-        A Method that is used to create a post/oferta object and add it directly to the freelancer posts.Works the same
-        way as uploading to social media.
-
-        Parameters
-        ----------
-        titulo : str
-            Title of the offer.
-        descripcion : str
-            Description of the offer.
-        imagen : str, optional
-            Image associated with the offer.
-        precio : float
-            Price of the offer.
-
-        Notes
-        ------
-        It uses the offer class to create posts and then add it to the freelancer posts list
-
-        """
-        self.posts.add(Offer(titulo, descripcion, self._username, imagen, precio))
-
-    def eliminar_un_post(self, titulo_no_deseado: str) -> None:
-        """
-        A function that allows to delete an post from freelancer posts list through the title of the post, through the
-        iterative search in posts.
-
-        Parameters
-        ----------
-        titulo_no_deseado:str
-            The title of the offer that will be deleted
-
-        Notes
-        ------
-            In case of not finding that specific post it will not delete it
-        """
-        quitado = False
-        for i in self.posts:
-            if i.title == titulo_no_deseado:
-                self.posts.remove(i)
-                print(f'El Post titulado: {titulo_no_deseado} ha sido eleminado')
-                quitado = True
-        if not quitado:
-            print(f'El titulo que introduciste no esta en tus posts')
 
 
     def agregar_resenya(self, resenya: int) -> None:

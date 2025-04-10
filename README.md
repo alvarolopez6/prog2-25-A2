@@ -1,5 +1,9 @@
 # Sixerr
 [//]: # (Incluid aquí la descripción de vuestra aplicación. Por cierto, así se ponen comentarios en Markdown)
+Proyecto asignatura Programación 2 (GIIA).
+
+Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofreciendo diferentes servicios mientras que otros usuarios pueden contratarlos
+
 
 ## Autores
 
@@ -30,7 +34,9 @@
 * Permitirá la importación de publicaciones en formato CSV o XML. (Ismael)
 
 ## Instrucciones de instalación y ejecución
-[//]: # (Indicad aquí qué habría que hacer para ejecutar vuestra aplicación)
+* Crear venv con el fichero _requirements.txt_
+* Ejecutar app Flask desde _main.py_
+* (Opcional) Probar usando _example.py_, mientras se mantiene _main.py_ en ejecución
 
 ## Resumen de la API
 
@@ -67,7 +73,44 @@
   * DELETE /usuario
   * Requiere JWT
 
-### Informes y Exportación
+### Gestión de publicaciones
+* Publicar Oferta(Post), solo Freelancer (Opción 9)
+  * POST /posts/offers
+  * Requiere JWT (Freelancer)
+  * Parámetros: Titulo, descripción, precio
+
+* Borrar post por título (Opción 12)
+  * DELETE /posts/user
+  * Requiere JWT
+  * Parámetros: Titulo
+
+### Contratación servicios
+* Contratar Oferta, solo Consumer (Opción 13)
+  * POST /usuario/hire
+  * Requiere JWT (Consumer)
+  * Parámetros: Usuario Freelancer, Titulo post
+
+### Exportación y obtención de datos
 * Mostrar datos del usuario actual (Opción 4)
   * GET /usuario
   * Requiere JWT
+
+* Ver todos los posts publicados (Opción 10)
+  * GET /posts
+
+* Ver posts publicados (Opción 11)
+  * GET /posts/user
+  * Requiere JWT
+
+* Ver servicios contratados, solo Consumer (Opción 14)
+  * GET /usuario/hire
+  * Requiere JWT (Consumer)
+
+* Exportar perfil a CSV (Opción 15)
+  * GET /usuario/export
+  * Requiere JWT
+
+* Exportar post a CSV (Opción 16)
+  * GET /posts/export
+  * Requiere JWT
+  * Parámetros: Titulo post

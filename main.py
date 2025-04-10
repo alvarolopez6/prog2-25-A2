@@ -1,7 +1,6 @@
-from flask import Flask, request
+from flask import Flask, request, send_file, Response
 from flask_jwt_extended import (JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt)
-import requests
-from scripts.regsetup import description
+
 
 from user import User
 from freelancer import Freelancer
@@ -9,7 +8,6 @@ from consumer import Consumer
 from crypto import hash_str
 from typing import Any, Union
 from offer import Offer
-from demand import Demand
 from generic_posts import Post
 #from database import SixerrDB
 
@@ -69,6 +67,9 @@ class App:
 
 if __name__ == '__main__':
     app = App()
+    Freelancer("Lancer","Lancer","Lancer","Lancer")
+    Consumer("Consum","Consum","Consum","Consum")
+
     @app.flask.route('/signup', methods=['POST'])
     def signup() -> tuple[str, int]:
         """
@@ -264,7 +265,7 @@ if __name__ == '__main__':
             else:
                 raise RestrictionPermission(type(User.usuarios[usuario]).__name__)
         except RestrictionPermission as restricted:
-            return f'{restricted}',404
+            return f'{restricted}',401
 
     @app.flask.route('/logout', methods=['DELETE'])
     @jwt_required()
@@ -305,23 +306,210 @@ if __name__ == '__main__':
         """
         return jwt_payload["jti"] in revoked_tokens
 
-    @app.flask.route('/posts', methods=['POST'])
+    @app.flask.route('/posts/offers', methods=['POST'])
     @jwt_required()
-    def publicar_post():
+    def publicar_offer() -> tuple[str, int]:
+        """
+        Publishes an Offer post. Requires a JWT Token. Only for Freelancers
+
+        Reads post's data (Title, description, price) from request arguments.
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Post published
+                - 404: User is not freelancer
+                - 409: Price is not a number
+        """
         current_user=get_jwt_identity()
         usuario=User.usuarios[current_user]
         titulo=request.args.get('titulo')
         description=request.args.get('description')
-        precio=int(request.args.get('price'))
+        precio = request.args.get('price')
         try:
-            if isinstance(usuario,Freelancer):
-                Offer(title=titulo,description=description,user=current_user,price=precio)
-                return f'Se Ha Publicado tu post de forma Correcta',200
+            """
+            if isinstance(usuario, Freelancer):
+                Offer(title=titulo, description=description, user=current_user, price=int(request.args.get('price')))
+            elif isinstance(usuario, Consumer):
+                Demand(title=titulo, description=description, user=current_user)
             else:
                 raise RestrictionPermission(type(usuario).__name__)
-        except RestrictionPermission as restricted:
-            return f'{restricted}',404
+            return f'Se Ha Publicado tu post de forma Correcta', 200
+            """
+            if isinstance(usuario, Freelancer):
+                Offer(title=titulo, description=description, user=current_user, price=precio)
+                return f'Se Ha Publicado tu post de forma Correcta', 200
+            else:
+                raise RestrictionPermission(type(usuario).__name__)
 
+        except RestrictionPermission as restricted:
+            return f'{restricted}', 401
+        except ValueError:
+            return f'Introduce por favor el precio en Numero', 409
+
+    @app.flask.route('/posts', methods=['GET'])
+    def ver_publicaciones() -> tuple[str, int]:
+        """
+        Returns a string with all posts published separated by ';' character.
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Posts given
+                - 404: No posts found
+        """
+        if not Post.posts:
+            return f'No Hay posts en este momento', 404
+        else:
+            posts = set()
+            for post in Post.posts.values():
+                posts |= post # posts = posts | post
+            return ";".join([i.display_information() for i in posts]), 200
+
+    @app.flask.route('/posts/user', methods=['GET'])
+    @jwt_required()
+    def ver_propias_publicaciones() -> tuple[str, int]:
+        """
+        Returns a string with all posts published by own User separated by ';' character.
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Posts given
+                - 404: No posts found
+        """
+        current_user = get_jwt_identity()
+        if (current_user in Post.posts) and Post.posts[current_user]:
+            return ';'.join([i.display_information() for i in Post.posts[current_user]]), 200 # Se puede usar __str__ en vez de display_information
+        else:
+            return f'User {current_user} no tiene posts en este momento', 404
+
+    @app.flask.route('/posts/user', methods=['DELETE'])
+    @jwt_required()
+    def borrar_propias_publicaciones() -> tuple[str, int]:
+        """
+        Deletes an own post by it title. Requieres a JWT Token.
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Post deleted
+                - 404: User has no posts to delete or has no post with that title
+        """
+        current_user = get_jwt_identity()
+        titulo = request.args.get('titulo')
+        if current_user in Post.posts:
+            for post in Post.posts[current_user]:
+                if post.title == titulo:
+                    Post.posts[current_user].remove(post)
+
+                    if not Post.posts[current_user]:
+                        del Post.posts[current_user]
+
+                    return f'Post {post.title} deleted for user {current_user}', 200
+            return f'User {current_user} has no post with title {titulo} to delete', 404
+        return f'User {current_user} has no posts to delete', 404
+
+    @app.flask.route('/usuario/hire', methods=['POST'])
+    @jwt_required()
+    def contratar_offer() -> tuple[str, int]:
+        """
+        Lets a Consumer hire a freelancer's offer. Requieres JWT Token (Consumer).
+
+        Gets from request arguments freelancer's user and post's title
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Offer hired
+                - 404: User does not exist, offer not found
+
+        """
+        current_user = get_jwt_identity()
+        tuser = request.args.get('tuser')
+        titulo = request.args.get('titulo')
+        try:
+            if tuser in User.usuarios:
+                user = User.usuarios[current_user]
+
+                if isinstance(user, Consumer) and isinstance(User.usuarios[tuser], Freelancer):
+                    user.servicios_contratados.add(Post.get_post(tuser, titulo))
+                    return f'Added post {tuser}>{titulo} to user {current_user}', 200
+                else:
+                    return 'Tienes que ser Consumer y el usuario Freelancer', 401
+            else:
+                return 'El usuario que introduciste no esta en nuestros base de datos', 404
+        except ValueError as v:
+            return f'{v}',404
+
+    @app.flask.route('/usuario/hire', methods=['GET'])
+    @jwt_required()
+    def ver_contratadas() -> tuple[str, int]:
+        """
+        Returns a string with all offers hired by an user separated by ';' character.
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: String returned
+                - 404/401: User does not exist or is not Consumer
+        """
+        current_user = get_jwt_identity()
+        current_account=User.usuarios[current_user]
+        try:
+            if isinstance(current_account, Consumer):
+                if current_account.servicios_contratados:
+                    return ';'.join([i.display_information() for i in current_account.servicios_contratados]), 200
+                else:
+                    return 'NO TIENES SERVICIOS CONTRATADOS',404
+            else:
+                raise RestrictionPermission(type(current_account).__name__)
+        except RestrictionPermission as rest:
+            return f'{rest}',401
+
+    @app.flask.route('/usuario/export', methods=['GET'])
+    @jwt_required()
+    def exportar_perfil() -> tuple[Union[Response, int], int]:
+        """
+        Exports the user's information into a CSV file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+        """
+        current_user = get_jwt_identity()
+        user = User.usuarios[current_user]
+        return send_file(user.export_user()), 200
+
+
+    @app.flask.route('/posts/export', methods=['GET'])
+    @jwt_required()
+    def exportar_post() -> tuple[Union[Response, int], int] | tuple[str, int]:
+        """
+         Exports a post's information by its title into a CSV file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
+        current_user = get_jwt_identity()
+        titulo = request.args.get('titulo')
+        try:
+            post = Post.get_post(current_user, titulo)
+            return send_file(post.export_post()), 200 # A lo mejor hay que borrar el archivo después de enviarlo
+        except ValueError as e:
+            return f'{e}',404
 
 
 

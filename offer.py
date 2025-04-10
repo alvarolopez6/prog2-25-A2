@@ -1,5 +1,6 @@
-from generic_posts import *
-from typing import Optional
+from typing import Optional, Self
+from generic_posts import Post
+from file_utils import CSVFile, Path
 
 class Offer(Post):
     """
@@ -35,6 +36,36 @@ class Offer(Post):
         """
         super().__init__(title, description, user, image)
         self.price = price
+
+    @classmethod
+    def import_post(cls, path: str | Path) -> Self:
+        """
+        Imports a post from a CSV file.  (Must be implemented in subclasses)
+
+        To avoid unwanted behaviours CSV headers must be: (¡post_type must be last column!)
+        title,description,user,image,publication_date,category,price/demand,post_type
+
+        Parameters
+        ----------
+        path: str | Path
+            Path to the CSV file.
+
+        Returns
+        -------
+        Offer Instance
+        """
+        f = CSVFile(path)
+        f.read()
+        if f.data[0][-1] != 'Offer':
+            raise NotImplementedError('Post type is not Offer')
+
+        obj = cls.__new__(cls)
+        for row in f.data:
+            for i, value in enumerate(row):
+                if f.headers[i] != 'post_type':
+                    setattr(obj, f.headers[i], value)
+
+        return obj
 
     def display_information(self) -> str:
         """
