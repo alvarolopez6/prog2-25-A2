@@ -33,5 +33,41 @@
 [//]: # (Indicad aquí qué habría que hacer para ejecutar vuestra aplicación)
 
 ## Resumen de la API
-[//]: # (Cuando tengáis la API, añadiréis aquí la descripción de las diferentes llamadas.)
-[//]: # (Para la evaluación por pares, indicaréis aquí las diferentes opciones de vuestro menú textual, especificando para qué sirve cada una de ellas)
+
+### Autenticación
+* Login (Opción 1)
+  * GET /login
+  * Parámetros: Nombre de usuario, contraseña
+
+* Logout (Opción 8)
+  * DELETE /logout
+  * Requiere JWT
+
+### Gestión de Usuarios
+* Registrar una nueva cuenta (Opción 3)
+  * POST /signup
+  * Parámetros: Nombre de usuario, Nombre, Contraseña, Email, tipo de cuenta
+
+* Actualizar Datos del usuario (Opción 2)
+  * PUT /usuario
+  * Requiere JWT
+  * Parámetros: Nombre, Email, teléfono
+
+* Cambiar contraseña (Opción 6)
+  * PUT /password
+  * Requiere JWT
+  * Parámetros: Contraseña antigua, Nueva contraseña
+
+* Cambiar método de pago, solo Consumers (Opción 7)
+  * PUT /metodo_pago
+  * Requiere JWT (Consumer)
+  * Parámetros: Método de pago
+
+* Borrar cuenta actual (Opción 5)
+  * DELETE /usuario
+  * Requiere JWT
+
+### Informes y Exportación
+* Mostrar datos del usuario actual (Opción 4)
+  * GET /usuario
+  * Requiere JWT
