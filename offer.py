@@ -16,7 +16,7 @@ class Offer(Post):
         Displays the complete information of the offer.
     """
 
-    def __init__(self, title: str, description: str, user: str, image: Optional[str], price: float) -> None:
+    def __init__(self, title: str, description: str, user: str, image: Optional[str], price: float=0) -> None:
         """
         Initializes an Offer instance.
 
@@ -31,7 +31,7 @@ class Offer(Post):
         image : str, optional
             Image associated with the offer.
         price : float
-            Price of the offer.
+            Price of the offer (default is 0).
         """
         super().__init__(title, description, user, image)
         self.price = price

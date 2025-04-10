@@ -22,6 +22,10 @@ class Post(ABC):
     ----------
     allowed_categories : set
         Set of allowed categories for the publication.
+    identification: int
+        Unique number of identification for each post.
+    posts: dict
+        Dictionary where all the posts get saved.
     title : str
         Title of the publication.
     description : str
@@ -47,12 +51,15 @@ class Post(ABC):
         Abstract method to be implemented by child classes.
     """
 
+
     allowed_categories = {
         "Mathematics", "Science", "Physics", "Chemistry", "Biology",
         "History", "Geography", "Literature", "Art", "Music",
         "Technology", "Computer Science", "Programming", "Robotics", "Astronomy",
         "Sports", "Health", "Philosophy", "Psychology", "Economics"
     }
+    identification = 0
+    posts: dict = {}
 
     def __init__(self, title: str, description: str, user: str, image: Optional[str] = None) -> None:
         """
@@ -75,6 +82,8 @@ class Post(ABC):
         self.image = image
         self.publication_date = datetime.now().date()
         self.category = None
+        Post.posts[Post.identification] = self
+        Post.identification +=1
 
     def add_category(self, category: str) -> None:
         """

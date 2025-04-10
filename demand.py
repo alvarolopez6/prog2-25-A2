@@ -16,7 +16,7 @@ class Demand(Post):
         Displays the complete information of the demand.
     """
 
-    def __init__(self, title: str, description: str, user: str, image: Optional[str], urgency: int) -> None:
+    def __init__(self, title: str, description: str, user: str, image: Optional[str]=None, urgency: int=3) -> None:
         """
         Initializes a Demand instance.
 
@@ -31,7 +31,7 @@ class Demand(Post):
         image : str, optional
             Image associated with the demand (default is None).
         urgency : int
-            Level of urgency (e.g., from 1 to 5, where 5 is the highest urgency).
+            Level of urgency (e.g., from 1 to 5, where 5 is the highest urgency) (default is 3).
         """
         super().__init__(title, description, user, image)
         self.urgency = urgency
