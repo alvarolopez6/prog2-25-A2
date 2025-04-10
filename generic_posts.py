@@ -42,6 +42,8 @@ class Post(ABC):
         "Sports", "Health", "Philosophy", "Psychology", "Economics"
     }
 
+    #posts: dict[str, set] = {}
+
     def __init__(self, title: str, description: str, user: str, image: Optional[str] = None) -> None:
         """
         Initializes a Publication instance.

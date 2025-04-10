@@ -64,6 +64,10 @@ class User:
 
             """
         # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
+
+        if not((telefono == None) or ((type(telefono) == str) and (len(telefono) == 9) and (telefono.isdigit()))):
+            raise ValueError('proque tal')
+
         self._username = username #Lectura
         self.nombre = nombre
         self._password = cy.hash_str(password) #Escritura
@@ -71,7 +75,13 @@ class User:
         self.telefono = telefono
         self.posts: set[Post] = set()
         User.usuarios[username]=self
-
+    """
+    def __setattr__(self, key, value):
+        self.__dict__[key] = value
+        if key in type(self).__db__['__map__'].values():
+            if self in type(self).usuarios:
+                db.SixerrDB().store(self)
+    """
     @property
     def username(self):
         return self._username

@@ -65,9 +65,9 @@ class Consumer(User):
         # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
         super().__init__(username, nombre, password, email, telefono)
         self.metodo_de_pago = metodo_de_pago
-        self.servicios_contratados:set[Offer] = set()
+        self.servicios_contratados: set[Offer] = set()
         self.pocket = pocket
-
+    '''
     def agregar_una_demanda(self, titulo: str, descripcion: str, imagen: str, urgencia: int) -> None:
         """
         A Method that is used to create a demand object and add it directly to the Consumer's demands list. Works the same
@@ -108,16 +108,16 @@ class Consumer(User):
                 quitado = True
         if not quitado:
             print(f'El titulo que introduciste no esta en tus demandas')
-
+    '''
     def contratar_servicio(self,post)-> None:
         """
-                A Method that allows to accept a demand from an costumer
+        A Method that allows to accept a demand from an costumer
 
-                Parameters
-                -----------
-                post: Post
-                    An object from class Offer that represents offer
-                """
+        Parameters
+        -----------
+        post: Post
+            An object from class Offer that represents offer
+        """
         self.servicios_contratados.add(post)
 
     def mostrar_info(self) -> str:
@@ -130,4 +130,4 @@ class Consumer(User):
         return info + f' metodo de pago: {self.metodo_de_pago} Pocket: {self.pocket}'
 
 
-consumer1=Consumer("juan06","pedro","1234","juanceto07@gmail.com", "78566321", "Visa")
+consumer1=Consumer("juan06","pedro","1234","juanceto07@gmail.com", "785663241", "Visa")

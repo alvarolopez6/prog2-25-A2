@@ -35,10 +35,17 @@ class App:
         self.flask = Flask('sixerr')
         """
         self.db = SixerrDB({})
+        for user in self.db.retrieve(Freelancer):
+            User.usuarios[user.username]=user
+        for user in self.db.retrieve(Consumer):
+            User.usuarios[user.username]=user
         """
         self.flask.config["JWT_SECRET_KEY"] = "super-secret"
         self.jwt = JWTManager(self.flask)
-
+    """
+    def __del__(self):
+        ...
+    """
     def start(self):
         self.flask.run(debug=True)
         """
@@ -72,6 +79,8 @@ if __name__ == '__main__':
                         return f'Por Favor Introduce un Tipo Correcto:(Freelancer/Consumer)', 404
                 else:
                     raise WrongPass(account)
+            except ValueError as e:
+                return f'{e.message}', 404 # otro codigo
             except WrongPass:
                 return f'Por Favor verifica que tu password contiene al menos 8 caracteres, Una mayuscula, una minuscula, un simbolo y un numero',404
 
@@ -120,6 +129,7 @@ if __name__ == '__main__':
             if User.usuarios[usuario].posts:
                 return f'No se ha Borrado Tu cuenta Debido a que tienes posts',404
             else:
+                ### db.delete(User.usuarios[usuario])
                 del User.usuarios[usuario]
                 return f'Se ha borrado tu cuenta de forma correcta',200
         except:
@@ -138,7 +148,7 @@ if __name__ == '__main__':
                 User.usuarios[usuario].password=new_pass
                 return f'Se ha cambiado tu password de forma correcta', 200
             else:
-                raise(WrongPass(usuario))
+                raise WrongPass(usuario)
         except WrongPass as wrong:
             return f'{wrong}'+f' / O el nuevo password no sigue los creterios establecidos', 404
 
