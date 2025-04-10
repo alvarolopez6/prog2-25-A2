@@ -5,7 +5,8 @@ import crypto as cy
 
 
 from generic_posts import Post
-
+from file_utils import CSVFile
+from datetime import datetime
 """
 @register(
     table='users',
@@ -188,6 +189,16 @@ class User:
 
         return has_lower and has_upper and has_digit and has_special
 
+    def export_user(self) -> None:
+        """
+        Gets user's info and exports it to a CSV file.
+        """
+        user_keys: list[str] = [key for key in self.__dict__.keys() if key != '_password']
+        user_values: list[str] = [value for key, value in self.__dict__.items() if key != '_password']
+        file_name = f'{self.username}_{datetime.now().strftime("%Y%m%d")}.csv'
+        f = CSVFile(f'data/{file_name}')
+        f.write_headers(user_keys)
+        f.write(user_values)
 
 
     def mostrar_info(self) -> str:

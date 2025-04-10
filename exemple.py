@@ -14,6 +14,7 @@ def main()-> None:
         print("6- Cambiar el password")
         print("7- Cambiar el metodo de pago (Consumer)")
         print("8- Cerrar Sesión")
+        print("9- Publicar Post (Freelancer)")
         op=input("POR FAVOR ELIGE LA OPCION ")
         match op:
             case '1':
@@ -103,6 +104,13 @@ def main()-> None:
                     print(r.status_code)
                     print(r.text)
                     token = None
+            case '9':
+                # Publicar Post(Freelancer)
+                r=requests.post(f'{URL}/posts?titulo={input("INTRODUCE EL TITULO DE LA PUBLICACION ")}'
+                               f'&description={input("INTRODUCE LA DESCRIPCION ")}'
+                               f'&price={input("INTRODUCE EL PRECIO ")}',  headers={'Authorization': 'Bearer ' + token if token else '' })
+                print(r.status_code)
+                print(r.text)
 
 
 main()

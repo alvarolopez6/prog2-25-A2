@@ -1,11 +1,16 @@
 from flask import Flask, request
 from flask_jwt_extended import (JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt)
 import requests
+from scripts.regsetup import description
+
 from user import User
 from freelancer import Freelancer
 from consumer import Consumer
 from crypto import hash_str
 from typing import Any, Union
+from offer import Offer
+from demand import Demand
+from generic_posts import Post
 #from database import SixerrDB
 
 class WrongPass(Exception):
@@ -299,5 +304,25 @@ if __name__ == '__main__':
             True if token is revoked, False otherwise
         """
         return jwt_payload["jti"] in revoked_tokens
+
+    @app.flask.route('/posts', methods=['POST'])
+    @jwt_required()
+    def publicar_post():
+        current_user=get_jwt_identity()
+        usuario=User.usuarios[current_user]
+        titulo=request.args.get('titulo')
+        description=request.args.get('description')
+        precio=int(request.args.get('price'))
+        try:
+            if isinstance(usuario,Freelancer):
+                Offer(title=titulo,description=description,user=current_user,price=precio)
+                return f'Se Ha Publicado tu post de forma Correcta',200
+            else:
+                raise RestrictionPermission(type(usuario).__name__)
+        except RestrictionPermission as restricted:
+            return f'{restricted}',404
+
+
+
 
     app.start()
