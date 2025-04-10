@@ -16,6 +16,12 @@ class ClientHandler(threading.Thread):
             self.client_socket.send(b"Ingresa tu nombre de usuario: ")
             self.username = self.client_socket.recv(1024).decode().strip()
 
+            # Verificar si el usuario ya está conectado
+            if self.server.is_user_connected(self.username):
+                self.client_socket.send(b"Error: Ya estas conectado desde otro terminal.\n")
+                self.client_socket.close()
+                return
+
             if not self.server.user_exists(self.username):
                 self.server.add_user(self.username)
 
