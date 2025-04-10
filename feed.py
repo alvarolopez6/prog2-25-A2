@@ -1,10 +1,7 @@
 import time
 import threading
-from pruebas import db
-from generic_posts import allowed_categories
-from offer import *
-from demand import *
-from buscador import fetch_posts_from_db
+from generic_posts import Post
+from buscador import filter_posts
 
 def listen_keyboard(stop_feed):
     """
@@ -109,31 +106,49 @@ def show_manual_feed(posts):
 
 if __name__ == '__main__':
     # Select post type
+    print('Posts can be filtered by type(offer/demand), category and keywords. These filteres are applied independently. To neglect any filter press enter')
+    print('----------------------------')
     while True:
         post_type = input(
             "Choose post type to filer: 'offer' for Offers, 'demand' for Demands, 'all' for everything: ").strip().lower()
-        if post_type in ('offer','demand','all'):
-                break
+        if post_type == '':
+            post_type = 'all'
+            break
+        elif post_type in ('offer','demand','all'):
+            break
         else:
-            print("Error, post type has to be 'offer','demand' or 'all'")
+            print("Error, post type has to be 'offer','demand' or 'all'. To neglect this filter press enter")
 
     # Select category of post
     while True:
         category = input(
-            "Choose category to filter: ex. 'science', 'economics'...: ").strip().lower()
-        if category in allowed_categories:
+            "Choose category to filter: ex. 'science', 'economics'...: ").strip().lower().capitalize()
+        if category == '':
+            category = None
+            break
+        elif category in Post.allowed_categories:
             break
         else:
-            print("Sorry, that category does not exit yet")
+            print("Sorry, that category does not exit yet. To neglect this filter press enter")
 
     # Enter keywords for search
-    keywords = input(
-        "Introduce keywords to search for: no comas, just words separates with a space:").split()
-    filtered_posts = fetch_posts_from_db(post_type, category, keywords)
+    while True:
+        keywords = input(
+            "Choose keywords to search for: try something like 'english teacher' or 'logo design'")
+        if keywords == '':
+            keywords = None
+        elif all(c.isalnum() or c.isspace() for c in keywords):
+            keywords = keywords.split().lower()
+        else:
+            print("To apply a keyword filter only numbers, letters and spaces are allowed. To neglect this filter press enter")
+        break
+
+    filtered_posts = filter_posts(post_type, category, keywords)
 
     # Select feed mode
     while True:
-        mode = input("Choose feed mode: 'auto' for automatic, 'manual' for manual: ").strip().lower()
+        print('There is 2 modes to see feed, automatic and manual. Automatic will display new posts every few seconds. Manual allows user to navigate freely through posts')
+        mode = input("Choose feed mode: 'auto' for automatic, 'manual' for manual: ")
         if mode == "auto":
             show_auto_feed(filtered_posts)
             break
