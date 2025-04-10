@@ -1,7 +1,19 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 from datetime import datetime
-
+'''
+@Database.register(
+    table='posts',
+    map={
+        'user':'user',
+        'title':'title',
+        'fecha':'publication_date',
+        'description':'description',
+        'image':'image',
+        'categories':'categories'
+}
+)
+'''
 class Post(ABC):
     """
     Abstract class representing a generic publication.
@@ -20,8 +32,8 @@ class Post(ABC):
         URL or path to the associated image (default is None).
     publication_date : datetime.date
         Date when the content is published (default is the current date).
-    categories : set
-        Set of categories associated with the publication.
+    category : str
+        Category associated with the publication.
 
     Methods
     -------
@@ -29,8 +41,8 @@ class Post(ABC):
         Adds a category if it is in the allowed categories list.
     remove_category(category: str) -> None
         Removes a category if it exists.
-    get_categories() -> set
-        Returns the set of associated categories.
+    get_category() -> str
+        Returns the associated category of a post.
     display_information() -> str
         Abstract method to be implemented by child classes.
     """
@@ -64,7 +76,7 @@ class Post(ABC):
         self.user = user
         self.image = image
         self.publication_date = datetime.now().date()
-        self.categories = set()
+        self.category = None
 
     def add_category(self, category: str) -> None:
         """
@@ -79,32 +91,26 @@ class Post(ABC):
         -----
         If the category is not in `allowed_categories`, an error message is displayed.
         """
-        if category in self.allowed_categories:
-            self.categories.add(category)
-        else:
-            print(f'Error: The category "{category}" is not allowed.')
+        if category not in self.allowed_categories:
+            raise ValueError(f'The category "{category}" is not allowed')
+        self.category = category
 
-    def remove_category(self, category: str) -> None:
+    def remove_category(self) -> None:
         """
         Removes a category from the publication if it exists.
-
-        Parameters
-        ----------
-        category : str
-            The name of the category to remove.
         """
-        self.categories.discard(category)
+        self.category = None
 
-    def get_categories(self) -> set:
+    def get_category(self) -> str:
         """
-        Returns the set of categories associated with the publication.
+        Returns the associated category of a post.
 
         Returns
         -------
-        set
-            Set of associated categories.
+        str
+            Associated category.
         """
-        return self.categories
+        return self.category
 
     @abstractmethod
     def display_information(self) -> str:
@@ -116,4 +122,4 @@ class Post(ABC):
         str
             Detailed information about the publication.
         """
-        return f'Title: {self.title}, Description: {self.description}, Publication date: {self.publication_date}, User: {self.user}, Categories: {", ".join(self.categories) if self.categories else "Any categorie"}'
+        return f'Title: {self.title}, Description: {self.description}, Publication date: {self.publication_date}, User: {self.user}, Category: {self.category if self.category is not None else "No category"}'
