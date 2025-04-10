@@ -1,5 +1,6 @@
 import socket        #permite la comunicacion server-user en red,facilita el envio de mensajes
 import threading     #permite realizar otros subprogramas independientemente sin bloquear al principal
+import os            #permite
 
 class Client:
     def __init__(self, host='127.0.0.1', port=5000):
@@ -21,33 +22,29 @@ class Client:
     def receive_messages(self):
         while True:
             try:
-                msg = self.client_socket.recv(1024).decode() #recibir el mensaje de maximo tamano de 1024 bytes desde el servidor
-                if not msg: #si no hay mensaje entrante
+                msg = self.client_socket.recv(1024).decode() #recibir los datos de maximo tamano 1024 bytes desde el servidor
+                if not msg: #si no hay datos entrantes, esto significa que la conexion ya no se realiza
                     print("\nConexión con el servidor cerrada.")
-                    os._exit(0)
-                print("\n" + msg, end="> ")
-            except Exception as e:
-                print(f"\nError de conexión: {e}")
-                os._exit(1)
+                    os._exit(0) #termina la ejecucion del codigo
+                print("\n" + msg, end="> ") #si hay datos, hacemos el print
+            except Exception as e: #si ocurre algun error
+                print(f"\nError de conexión: {e}") #mensaje de error
+                os._exit(1) #terminar la ejecucion
 
     def run(self):
         try:
             while True:
-                command = input("> ").strip()
+                command = input("> ").strip() #escribir un mesaje que puede tambien ser un comando de salida
                 if command.lower() == "/quit":
-                    self.client_socket.send(command.encode())
-                    self.client_socket.close()
+                    self.client_socket.send(command.encode()) #en caso de '/quit' (asi se sale del programa) se envia al servidor
+                    self.client_socket.close() #se cierra el socket
                     print("Desconectado del servidor.")
                     break
-                self.client_socket.send(command.encode())
-        except KeyboardInterrupt:
-            print("\nCerrando cliente...")
-            self.client_socket.close()
-        except Exception as e:
-            print(f"Error: {e}")
+                self.client_socket.send(command.encode()) #en otro caso se realiza solamente el envio
+        except Exception as e: #si ocurre algun error
+            print(f"Error: {e}") #se hace el print
         finally:
-            self.client_socket.close()
+            self.client_socket.close()  #y se cierra el socket
 
 if __name__ == "__main__":
-    import os
     client = Client()
