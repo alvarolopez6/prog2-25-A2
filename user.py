@@ -65,9 +65,6 @@ class User:
             """
         # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
 
-        if not((telefono == None) or ((type(telefono) == str) and (len(telefono) == 9) and (telefono.isdigit()))):
-            raise ValueError('proque tal')
-
         self._username = username #Lectura
         self.nombre = nombre
         self._password = cy.hash_str(password) #Escritura
@@ -86,6 +83,16 @@ class User:
     def username(self):
         return self._username
 
+    @property
+    def get_telefono(self):
+        return self.telefono
+
+    @get_telefono.setter
+    def get_telefono(self, value):
+        if not((value is None) or ((type(value) == str) and (len(value) == 9) and (value.isdigit()))):
+            raise ValueError('El telefono debe ser un numero')
+        else:
+            self.telefono = value
 
 
     @classmethod
@@ -112,6 +119,32 @@ class User:
         """
         self._password=cy.hash_str(value)
 
+    @staticmethod
+    def valid_email(email: str):
+        """
+        Validates if a given email address is valid (in syntax).
+        Format must be: name@provider.extension
+
+        Parameters
+        ----------
+        email: str
+            Email address to validate.
+
+        Returns
+        -------
+        bool
+            True if email is valid, otherwise raise ValueError
+        """
+        if '@' not in email or '.' not in email:
+            raise ValueError('Error el formato del email debe seguir: name@provider.extension')
+
+        split_email = email.split('@')
+        if len(split_email[0]) == 0 or len(split_email[1]) == 0 or len(split_email) != 2:
+            raise ValueError('Error el formato del email debe seguir: name@provider.extension')
+
+        split_domain = split_email[1].split('.')
+        if len(split_domain[0]) == 0 or len(split_domain[1]) == 0 or len(split_domain) != 2:
+            raise ValueError('Error el formato del email debe seguir: name@provider.extension')
 
     @staticmethod
     def secure_password(password: str) -> bool:

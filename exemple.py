@@ -13,6 +13,7 @@ def main()-> None:
         print("5- Borrar La cuenta Actual")
         print("6- Cambiar el password")
         print("7- Cambiar el metodo de pago (Consumer)")
+        print("8- Cerrar Sesión")
         op=input("POR FAVOR ELIGE LA OPCION ")
         match op:
             case '1':
@@ -84,6 +85,14 @@ def main()-> None:
                 r = requests.put(f'{URL}/metodo_pago?metodo={metodo}',headers={'Authorization': 'Bearer ' + token if token else '' })
                 print(r.status_code)
                 print(r.text)
+            case '8':
+                if token is None:
+                    print("No hay sesión iniciada")
+                else:
+                    r = requests.delete(f'{URL}/logout', headers={'Authorization': 'Bearer ' + token if token else '' })
+                    print(r.status_code)
+                    print(r.text)
+                    token = None
 
 
 main()
