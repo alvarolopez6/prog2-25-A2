@@ -59,7 +59,8 @@ class ClientHandler(threading.Thread):
         except Exception as e:
             print(f"Error con {self.username}: {e}")
         finally:
-            self.server.remove_connection(self.username)
+            if self.username:  # Solo si el username fue asignado
+                self.server.remove_connection(self.username)
             self.client_socket.close()
             print(f"Conexión con {self.username} cerrada.")
 
@@ -114,6 +115,10 @@ class ChatServer:
     def user_exists(self, username):
         with self.lock:
             return username in self.users
+
+    def is_user_connected(self, username):
+        with self.lock:
+            return username in self.connections
 
     def add_connection(self, username, client_socket):
         with self.lock:
