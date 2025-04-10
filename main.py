@@ -65,7 +65,7 @@ class App:
 if __name__ == '__main__':
     app = App()
     @app.flask.route('/signup', methods=['POST'])
-    def signup() -> tuple[Union[str, dict[str, Any]], int]:
+    def signup() -> tuple[str, int]:
         """
         Registers a new user, username must be unique and password must be secure enough (see User.secure_password)
 
@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
         Returns
         -------
-        Tuple[Union[str, Dict[str, Any]], int]
+        Tuple[str, int]
             (message, status_code) tuple. Status_code can be:
                 - 200: Successful registration
                 - 409: Username already exists or password is not secure enough
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     revoked_tokens = set()
 
     @app.flask.route('/login', methods=['GET'])
-    def login() -> tuple[str, int]:
+    def login() -> tuple[Union[str, dict[str, Any]], int]:
         """
         Realizes user's login and generates JWT token
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
         Returns
         -------
-        Tuple[str, int]
+        Tuple[Union[str, dict[str, Any]], int]
             (message, status_code) tuple. Status code can be:
                 - 200: Successful login and JWT token is created
                 - 401: User or password given is incorrect
