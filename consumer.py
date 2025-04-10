@@ -1,8 +1,7 @@
-from datetime import datetime
 from user import User
 from offer import Offer
 from demand import Demand
-import crypto as cy
+
 
 class Consumer(User):
     """
@@ -11,37 +10,34 @@ class Consumer(User):
 
         Attributes
         ----------
-        username: str
+        _username: str
             an unique string used to identify objects from others
         nombre: str
             the name of the user
-        password: str
+        _password: str
             an unique code that allows you to access to a certain account
         email: str
             a string which provides more information about emails of users
         telefono: int
             an int that represents the phone number of users
-        fecha_creacion: str
-            an date that provides information about the time of the creation of certain account
         metodo_de_pago: str
             a preference of way of paying which is set to whether the consumer wants to buy with paypal, credit card...
         servicios_contratados: set[Offer]
             a list that contains the services bought, the services will be added through the contratar_servicios method
         pocket: int
             an int that represent the virtual pocket of an consumer (default 0)
-        demandas: set[Offer]
-            a list that contains all demands of a certain User
 
 
         Methods
         ---------
-        agregar_una_demanda(titulo: str, descripcion: str, imagen: str, urgencia: int) -> None
-            A function that creates an object demand and add it to the consumer list of demands
 
-        eliminar_una_demanda(titulo_no_deseado : str) -> None
-            Delete a demand from a user list of demands through the title of the demand
+        contratar_servicio(post:Offer)->None
+            Allows to get a service with is an Offer Object.
+
+        mostrar_info()->str
+            En extended version of User Mostar info method, that shows informations about an consumer
         """
-    def __init__(self, username: str, nombre: str, password: str, email: str, telefono: int, metodo_de_pago: str,
+    def __init__(self, username: str, nombre: str, password: str, email: str, telefono: str= None, metodo_de_pago: str = None,
                  pocket: int=0) -> None:
         """
             Creates an instance of Consumer
@@ -61,54 +57,27 @@ class Consumer(User):
             metodo_de_pago: str
                 a preference of way of paying which is set to whether the consumer wants to buy with paypal, credit card...
         """
-        # TODO: Mantener atributos como privados, acceder a ellos a través de métodos
-        super().__init__(username, nombre, cy.hash_str(password), email, telefono)
+        super().__init__(username, nombre, password, email, telefono)
         self.metodo_de_pago = metodo_de_pago
-        self.servicios_contratados:set[Offer] = set()
+        self.servicios_contratados: set[Offer] = set()
         self.pocket = pocket
-        self.demandas: set[Demand] = set()
 
-    def agregar_una_demanda(self, titulo: str, descripcion: str, imagen: str, urgencia: int, publication_date:str=datetime.now().date()) -> None:
+    def contratar_servicio(self,post)-> None:
         """
-        A Method that is used to create a demand object and add it directly to the Consumer's demands list. Works the same
-        way as uploading to social media.
+        A Method that allows to accept a demand from an costumer
 
         Parameters
-        ----------
-        titulo : str
-            Title of the demand.
-        descripcion : str
-            Description of the demand.
-        imagen : str, optional
-            Image associated with the demand (default is None).
-        urgencia: int
-            Level of urgency (e.g., from 1 to 5, where 5 is the highest urgency).
-        publication_date:str
-            a date when the demand was made (default is the current date)
-         """
-        self.demandas.add(Demand(titulo, descripcion, self.username, imagen, urgencia, publication_date))
-
-    def eliminar_una_demanda(self, titulo_no_deseado: str) -> None:
+        -----------
+        post: Post
+            An object from class Offer that represents offer
         """
-        A function that allows to delete a demand from a consumer demand's list through the title of the demand, through the
-        iterative search in demands.
+        self.servicios_contratados.add(post)
 
-        Parameters
-        ----------
-        titulo_no_deseado:str
-            The title of the demand that will be deleted
-
-        Notes
-        ------
-        In case of not finding that specific demand it will not delete it
+    def mostrar_info(self) -> str:
         """
-        quitado = False
-        for i in self.demandas:
-            if i.title == titulo_no_deseado:
-                self.demandas.remove(i)
-                print(f'La demanda titulada: {titulo_no_deseado} ha sido eleminada')
-                quitado = True
-        if not quitado:
-            print(f'El titulo que introduciste no esta en tus demandas')
 
-# METODO:CONTRATAR UN SERVICIO/POST
+        Method that uses the super info from User and extend it with its own information
+
+        """
+        info=super().mostrar_info()
+        return info + f' metodo de pago: {self.metodo_de_pago} Pocket: {self.pocket}'
