@@ -1,7 +1,13 @@
 import socket        #permite la comunicacion server-user en red,facilita el envio de mensajes
 import threading     #permite realizar otros subprogramas independientemente sin bloquear al principal
-import os            #permite
+import os
+'''
+The USER1/2 contains the code parts that manages data received (server-client) (receive_mesages()), 
+the sent data (client-server) (run()) and also some parts of the code that manages the connection 
+server client (__innit__()). For more clarity I suggest to read the coment all over the code.
 
+Authors:Oussama Samrani El Fetouaki   
+'''
 class Client:
     def __init__(self, host='127.0.0.1', port=5000):
         self.host = host    #define el host del cliente tendra como direccion la local
