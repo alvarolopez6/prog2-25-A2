@@ -70,6 +70,17 @@ class File(ABC):
         if self.path.exists:
             self.path.path.unlink(missing_ok=True)
 
+    def __str__(self) -> str:
+        """
+        Returns file system path as string
+
+        Returns
+        -------
+        str
+            String representation of file's system path.
+        """
+        return f'System Path: {self.path}'
+
     @abstractmethod
     def read(self) -> None:
         """
