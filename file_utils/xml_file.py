@@ -6,9 +6,9 @@ Defines class 'XMLFile(File)' for writing XML files
 Author: Ismael Escribano
 Creation Date: 05-05-2025
 """
-from file_utils import Path, File
+from file_utils import Path, Exportable, Importable
 
-class XMLFile(File):
+class XMLFile(Exportable, Importable):
     def read(self) -> None:
         pass
 

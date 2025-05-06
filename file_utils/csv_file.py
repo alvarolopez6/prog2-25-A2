@@ -33,7 +33,8 @@ class NotEnoughColumns(Exception):
     def __str__(self) -> str:
         return f'Introduced {self.num_data} elements but CSV File has {self.num_col} columns'
 
-
+# TODO: CSVFile debe heredar de las clases "Exportable" e "Importable"
+# No debería ocurrir ningún problema al cambiarlo, pero me gustaría probarlo correctamente antes.
 class CSVFile(File):
     """
     Class for handling Read and Write operations on CSV files.

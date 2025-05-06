@@ -7,10 +7,11 @@ Author: Ismael Escribano
 Creation Date: 29-03-2025
 """
 
+from typing import Sequence, Mapping
 from abc import ABC, abstractmethod
 from file_utils import Path
 
-class File(ABC):
+class File:
     """
     Abstract class for handling file operation
 
@@ -30,7 +31,7 @@ class File(ABC):
     read -> None
         Reads the file's content (Must be implemented by subclasses)
     write(content: str) -> None
-        Writes content into the file (Must be implemented by subclasses)
+        Writes content into the file (Must be implemented by subclasses) #TODO: Eliminar de este docstring
     """
 
     def __init__(self, path: Path | str) -> None:
@@ -81,23 +82,26 @@ class File(ABC):
         """
         return f'System Path: {self.path}'
 
+#TODO: Docstrings de ámbas clases
+class Exportable(ABC, File):
+    @abstractmethod
+    def write(self, content: str | Sequence | Mapping) -> None:
+        """
+        Writes content into the file (Must be implemented by subclasses)
+
+        Parameters
+        ----------
+        content : str | Sequence | Mapping (depends on subclass)
+             Content to be written into the file
+        """
+        pass
+
+class Importable(ABC, File):
     @abstractmethod
     def read(self) -> None:
         """
         Reads the file's content (Must be implemented by subclasses)
 
         NOTE: Subclasses must have 'data' attribute, otherwise this method should return a Sequence or str
-        """
-        pass
-
-    @abstractmethod
-    def write(self, content: str) -> None:
-        """
-        Writes content into the file (Must be implemented by subclasses)
-
-        Parameters
-        ----------
-        content : str
-            Content to be written into the file
         """
         pass
