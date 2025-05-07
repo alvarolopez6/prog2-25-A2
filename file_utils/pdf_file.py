@@ -7,30 +7,56 @@ Author: Ismael Escribano
 Creation Date: 05-05-2025
 """
 from dataclasses import dataclass
-from enum import Enum
-from typing import Optional
+from typing import Optional, TypeVar
 
 import textwrap
+from datetime import datetime
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
+# TODO: No utilizar 'colors', crear colores usando RGB con 'toColor' (pedirlo por parámetro, Optional[str])
+from reportlab.lib.colors import toColor
 from reportlab.lib.utils import ImageReader
-from reportlab.platypus import SimpleDocTemplate, Paragraph # Parece ser otra manera de justificar texto sin textwrap
-
+#from reportlab.platypus import SimpleDocTemplate, Paragraph # Parece ser otra manera de justificar texto sin textwrap
 
 from file_utils import Path, Exportable
+
+
+class AlignmentError(Exception):
+    """
+    Exception raised when an invalid alignment is entered in PDFFile class
+    """
+    def __init__(self, align: str, *args) -> None:
+        super().__init__(*args)
+        self.align = align
+
+    def __str__(self) -> str:
+        return f'Alignment {self.align} does not exist. Supported alignments: "left", "right", "center"'
+
+PDFContent = TypeVar('PDFContent', bound='PDFBase')
 
 @dataclass
 class LinePoint:
     x: float
     y: float
 
-class Alineacion(Enum):
-    izquierda: str = "left"
-    derecha: str = "right"
-    centrado: str = "center"
+@dataclass
+class PDFBase:
+    title: str
+    description: str
+    user: str
+    image: Path | str
+    category: str
+    publication_date: datetime
 
+@dataclass
+class PDFOffer(PDFBase):
+    price: float
+
+@dataclass
+class PDFDemand(PDFBase):
+    urgency: int
 
 class PDFFile(Exportable):
     """
@@ -57,8 +83,9 @@ class PDFFile(Exportable):
         self.c = canvas.Canvas(self.filename, pagesize=letter)
         self.width, self.height = letter # Tamaño de la página
 
-    def agregar_texto(self, start_point: LinePoint, text: str, align: str) -> None:
+    def add_textline(self, start_point: LinePoint, text: str, align: str) -> None:
         """Escribir texto con diferentes alineaciones"""
+        self.c.setStrokeColor(colors.black)
         self.c.setFont(type(self).FONT, type(self).FONT_SIZE)
         match align.lower():
             case 'left':
@@ -68,30 +95,26 @@ class PDFFile(Exportable):
             case 'center':
                 self.c.drawCentredString(start_point.x, start_point.y, text)
             case _:
-                return Exception(f'Alignment {align} does not exist. Supported alignments: "left", "right", "center"')
+                raise AlignmentError(align)
 
-    def dibujar_lineas(self, point1: LinePoint, point2: LinePoint):
+    def draw_line(self, point1: LinePoint, point2: LinePoint):
         """Dibujar líneas de separación"""
+        self.c.setStrokeColor(toColor('rgb(69, 114, 196)'))
         self.c.line(point1.x, point1.y, point2.x, point2.y)
 
-    def dibujar_cuadros(self) -> None:
+    def draw_square(self, start_point: LinePoint, width: int, height: int) -> None:
         """Dibujar rectángulos con colores de fondo, WIP"""
         # Rectángulo gris claro
-        self.c.setFillColor(colors.lightgrey)
-        self.c.rect(50, 600, 200, 50, fill=1)
+        self.c.setStrokeColor(colors.lightgrey)
+        self.c.rect(start_point.x, start_point.y, width, height)
 
-        # Texto encima del rectángulo
-        self.c.setFillColor(colors.black)
-        self.c.drawString(60, 625, "Cuadro con texto")
-
-
-    def anadir_imagen(self):
+    def add_image(self, image_path: Path | str, start_point: LinePoint, height: int, width: int):
         """Añade imagenes al archivo, WIP"""
         try:
-            imagen = ImageReader('imagen.jpg')
-            self.c.drawImage(imagen, 400, 400, height=200, width=150)  # Ajusta la posición y el tamaño
-        except Exception as e:
-            self.c.drawString(400, 400, "Imagen no encontrada")
+            image = ImageReader(image_path)
+            self.c.drawImage(image, start_point.x, start_point.y, height, width)  # Ajusta la posición y el tamaño
+        except IOError:
+            self.add_textline(start_point, 'Imagen no encontrada', 'left')
 
     @classmethod
     def change_font(cls, new_font: Optional[str] = None, new_font_size: Optional[int] = None) -> None:
@@ -103,49 +126,64 @@ class PDFFile(Exportable):
         if new_font_size is not None:
             cls.FONT_SIZE = new_font_size
 
-
-    def write(self, content: dict[str, str]) -> None:
+    def write(self, content: PDFContent) -> None:
         """
         Writes content to a .pdf file
 
         Parameters
         ----------
-        content : dict[str]
+        content : PDFContent
             Content to write
         """
-        # TODO: Obtener valores de 'content'
         # ===== CREACIÓN ARCHIVO PDF PUBLICACIÓN (OFERTA) =====
+        height = self.height
         # Logo Sixerr
         type(self).change_font('Helvetica-Bold', 16)
-        self.agregar_texto(LinePoint(50, self.height - 50), 'Sixerr', 'left')
+        height -= 50
+        self.add_textline(LinePoint(50, height), 'Sixerr', 'left')
 
         # Título publicación
         type(self).change_font(new_font_size = 22)
-        self.agregar_texto(LinePoint(self.width // 2 , self.height - 100), 'Titulo publicación', 'center')
-        self.dibujar_lineas(LinePoint(50, self.height - 120), LinePoint(550, self.height - 120))
-
-        # Precio
-        type(self).change_font('Helvetica', 12)
-        self.agregar_texto(LinePoint(500, self.height - 165), f'Precio: ${None}', 'right')
+        height -= 50
+        self.add_textline(LinePoint(self.width // 2 , height), content.title, 'center')
+        height -= 20
+        self.draw_line(LinePoint(75, height), LinePoint(525, height))
 
         # Usuario
-        self.agregar_texto(LinePoint(500, self.height - 150), f'Publicado por: {None}', 'right')
-            #TODO: Añadir imagen usuario (en caso de añadir imagenes a los perfiles)
+        type(self).change_font('Helvetica', 12)
+        height -= 30
+        self.add_textline(LinePoint(500, height), f'Publicado por: {content.user}', 'right')
+
+        # Precio
+        type(self).change_font(new_font_size=20)
+        self.add_textline(LinePoint(100, height), f'{content.price}€', 'left')
 
         # Fecha de publicación
         type(self).change_font(new_font_size = 8)
-        self.agregar_texto(LinePoint(500, self.height - 175), f'Fecha publicación: {None}', 'right')
+        height -= 20
+        self.add_textline(LinePoint(500, height), f'Fecha publicación: {content.publication_date.strftime("%d/%m/%Y")}', 'right')
+        height -= 20
+        self.draw_line(LinePoint(75, height), LinePoint(525, height))
 
-        # Descripción
+        # Categorias, WIP
+        height -= 30
+        self.draw_square(LinePoint(75, height), 200, 25)
+        height += 10
+        self.add_textline(LinePoint(75, height), f'Categoría: {content.category}', 'left')
+
+        # Descripción TODO: Implementar (mejor) el texto justificado
         type(self).change_font(new_font_size=12)
-        # TODO: Implementar (mejor) el texto justificado
-        text = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis dictum sit amet, sollicitudin ut lorem. Sed accumsan in enim at porta. Pellentesque dolor enim, aliquam ac libero vitae, porttitor laoreet neque. Suspendisse molestie eu metus sit amet tincidunt. Curabitur in arcu diam. Cras vel justo dictum, sollicitudin odio eu, maximus turpis. Nulla eget convallis velit. Maecenas metus velit, feugiat at pellentesque vitae, pellentesque id mi. Praesent suscipit ante quis elit lacinia, sit amet vehicula enim sollicitudin. Sed sit amet tempus sem. Ut iaculis elit quis ex dictum, nec tristique ipsum convallis."""
-        wrapped_text = textwrap.fill(text, width=80)
+        wrapped_text = textwrap.fill(content.description, width=85)
         splitted_text = wrapped_text.split('\n')
-        height = self.height - 230
+        height -= 65
         for i in splitted_text:
-            self.agregar_texto(LinePoint(100, height), i, 'left')
-            height -= 14 # TODO: Modificar una variable local 'height' en vez de utilizar siempre 'self.height - ...'
+            self.add_textline(LinePoint(75, height), i, 'left')
+            height -= 14
+        self.draw_line(LinePoint(75, height), LinePoint(525, height))
+
+        # Prueba imagen, WIP
+        height -= 150
+        self.add_image(content.image, LinePoint(75, height), 100, 100)
 
         # Guardado del archivo .pdf
         self.c.save()
@@ -155,4 +193,15 @@ class PDFFile(Exportable):
 # Tests
 if __name__ == '__main__':
     f = PDFFile('archivo.pdf')
-    f.write({'a': 'a'})
+    # Lorem ipsum de ejemplo
+    data_text = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis dictum sit amet, sollicitudin ut lorem. Sed accumsan in enim at porta. Pellentesque dolor enim, aliquam ac libero vitae, porttitor laoreet neque. Suspendisse molestie eu metus sit amet tincidunt. Curabitur in arcu diam. Cras vel justo dictum, sollicitudin odio eu, maximus turpis. Nulla eget convallis velit. Maecenas metus velit, feugiat at pellentesque vitae, pellentesque id mi. Praesent suscipit ante quis elit lacinia, sit amet vehicula enim sollicitudin. Sed sit amet tempus sem. Ut iaculis elit quis ex dictum, nec tristique ipsum convallis."""
+    pdf_content = PDFOffer(
+        title='Titulo de Ejemplo',
+        description=data_text,
+        price=59.99,
+        user='Usuario Ejemplo',
+        image='imagen.jpg',
+        category='Clases particulares',
+        publication_date=datetime.now(),
+    )
+    f.write(pdf_content)

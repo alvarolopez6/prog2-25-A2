@@ -11,7 +11,7 @@ from itertools import zip_longest
 from collections.abc import Sequence
 from typing import Self
 
-from file_utils import Path, File
+from file_utils import Path, Exportable, Importable
 
 
 class NoHeadersFound(Exception):
@@ -33,9 +33,7 @@ class NotEnoughColumns(Exception):
     def __str__(self) -> str:
         return f'Introduced {self.num_data} elements but CSV File has {self.num_col} columns'
 
-# TODO: CSVFile debe heredar de las clases "Exportable" e "Importable"
-# No debería ocurrir ningún problema al cambiarlo, pero me gustaría probarlo correctamente antes.
-class CSVFile(File):
+class CSVFile(Exportable, Importable):
     """
     Class for handling Read and Write operations on CSV files.
 

@@ -84,6 +84,14 @@ class File:
 
 #TODO: Docstrings de ámbas clases
 class Exportable(ABC, File):
+    """
+    Abstract class for indicating an exportable file (can be written)
+
+    Methods
+    -------
+    write(content: str | Sequence | Mapping) -> None
+        Writes content into the file (Must be implemented by subclasses)
+    """
     @abstractmethod
     def write(self, content: str | Sequence | Mapping) -> None:
         """
@@ -97,6 +105,13 @@ class Exportable(ABC, File):
         pass
 
 class Importable(ABC, File):
+    """
+    Abstract class for indicating an importable file (can be read)
+
+    Methods
+    read() -> None
+        Reads the file's content (Must be implemented by subclasses)
+    """
     @abstractmethod
     def read(self) -> None:
         """
