@@ -28,10 +28,8 @@ class File:
         Clears the file's data
     delete() -> None
         Deletes the file
-    read -> None
-        Reads the file's content (Must be implemented by subclasses)
-    write(content: str) -> None
-        Writes content into the file (Must be implemented by subclasses) #TODO: Eliminar de este docstring
+    __str__() -> str
+        Returns the string representation of the file
     """
 
     def __init__(self, path: Path | str) -> None:
@@ -82,7 +80,7 @@ class File:
         """
         return f'System Path: {self.path}'
 
-#TODO: Docstrings de ámbas clases
+
 class Exportable(ABC, File):
     """
     Abstract class for indicating an exportable file (can be written)
