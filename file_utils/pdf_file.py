@@ -7,7 +7,9 @@ Author: Ismael Escribano
 Creation Date: 05-05-2025
 """
 from dataclasses import dataclass
-from typing import Optional, TypeVar
+from functools import reduce
+from typing import Optional, Union
+
 from textwrap3 import wrap
 from datetime import datetime
 
@@ -18,6 +20,7 @@ from reportlab.lib.utils import ImageReader
 
 
 from file_utils import Path, Exportable
+
 
 
 class AlignmentError(Exception):
@@ -37,9 +40,6 @@ class AlignmentError(Exception):
         return f'Alignment {self.align} does not exist. Supported alignments: "left", "right", "center"'
 
 
-PDFContent = TypeVar('PDFContent', bound='PDFBase')
-
-
 @dataclass
 class Point:
     """
@@ -49,9 +49,9 @@ class Point:
     y: float
 
 @dataclass
-class PDFBase:
+class PDFPost:
     """
-    Dataclass that represents basic content for writing a PDF File
+    Dataclass that represents basic content for writing a PDF File for Posts
     """
     title: str
     description: str
@@ -61,18 +61,49 @@ class PDFBase:
     publication_date: datetime
 
 @dataclass
-class PDFOffer(PDFBase):
+class PDFOffer(PDFPost):
     """
     Dataclass with basic content and specific 'Offer' class content
     """
     price: float
 
 @dataclass
-class PDFDemand(PDFBase):
+class PDFDemand(PDFPost):
     """
     Dataclass with basic content and specific 'Demand' class content
     """
     urgency: int
+
+@dataclass
+class PDFUser:
+    """
+    Dataclass with basic content for writing a PDF File for User profiles
+    """
+    username: str
+    nombre: str
+    email: str
+    telefono: str
+    posts: set[str] # TODO: Cambiar 'set[str]' -> 'set[Post]'
+
+@dataclass
+class PDFFreelancer(PDFUser):
+    """
+    Dataclass with basic content and specific 'Freelancer' class content
+    """
+    habilidades: list[str]
+    opiniones: list[int]
+    rating: float
+
+class PDFConsumer(PDFUser):
+    """
+    Dataclass with basic content and specific 'Consumer' class content
+    """
+    metodo_de_pago: str
+    pocket: int
+    servicios_contratados: set[str] # TODO: Cambiar 'set[str]' -> 'set[Offer]'
+
+PDFContent = Union[PDFOffer, PDFDemand, PDFFreelancer, PDFConsumer]
+
 
 class PDFFile(Exportable):
     """
@@ -88,6 +119,8 @@ class PDFFile(Exportable):
         Width of the PDF canvas
     height: float
         Height of the PDF canvas
+    sixerr_logo: Path
+        System path to 'sixerr_logo.png'
     FONT: str
         (Class attribute), Typing font to be used
     FONT_SIZE: int
@@ -110,6 +143,7 @@ class PDFFile(Exportable):
     write(content: PDFContent) -> None
         Writes content to a PDF file
     """
+    sixerr_logo = Path('../data/images/sixerrlogo.png').absolute
     def __init__(self, path: Path | str) -> None:
         """
         Initializes a PDFFile instance
@@ -126,7 +160,7 @@ class PDFFile(Exportable):
         self.c: canvas = canvas.Canvas(self.path.absolute, pagesize=letter)
         self.width, self.height = letter # Tamaño de la página
 
-    def add_textline(self, start_point: Point, text: str, align: str, color: Optional[str] = 'rgb(0, 0, 0)') -> None:
+    def __add_textline(self, start_point: Point, text: str, align: str, color: Optional[str] = 'rgb(0, 0, 0)') -> None:
         """
         Adds a text line to the PDF file, font and font size must be defined.
         'color' string must follow ReportLab's conventions, see ReportLab.lib.colors.toColor docstring.
@@ -161,11 +195,11 @@ class PDFFile(Exportable):
             case _:
                 raise AlignmentError(align)
 
-    def add_paragraph(self, start_point: Point, text: str | list[str, ...], width: int, align: str,
+    def __add_paragraph(self, start_point: Point, text: str | list[str, ...], width: int, align: str,
                       color: Optional[str] = 'rgb(0, 0, 0)') -> float:
         """
         Adds one or more paragraph(s) (multiple lines) to a PDF file, font and font size must be defined.
-        Calls 'PDFFile.add_textline' for every line.
+        Calls 'PDFFile.__add_textline' for every line.
         'color' string must follow ReportLab's conventions, see ReportLab.lib.colors.toColor docstring.
 
         Parameters
@@ -190,11 +224,11 @@ class PDFFile(Exportable):
         for i in text:
             paragraph = wrap(i, width)
             for line in paragraph:
-                self.add_textline(start_point, line, align, color)
+                self.__add_textline(start_point, line, align, color)
                 start_point.y -= (type(self).FONT_SIZE + 2)
         return start_point.y
 
-    def draw_line(self, point1: Point, point2: Point, color: Optional[str] = 'rgb(69, 114, 196)') -> None:
+    def __draw_line(self, point1: Point, point2: Point, color: Optional[str] = 'rgb(69, 114, 196)') -> None:
         """
         Draws a line to the PDF file.
         'color' string must follow ReportLab's conventions, see ReportLab.lib.colors.toColor docstring.
@@ -216,7 +250,7 @@ class PDFFile(Exportable):
         self.c.setStrokeColor(toColor(color))
         self.c.line(point1.x, point1.y, point2.x, point2.y)
 
-    def draw_square(self, start_point: Point, width: int, height: int, color: Optional[str] = 'rgb(211, 211, 211)') -> None:
+    def __draw_square(self, start_point: Point, width: int, height: int, color: Optional[str] = 'rgb(211, 211, 211)') -> None:
         """
         Draws a rectangle on the PDF file.
         'color' string must follow ReportLab's conventions, see ReportLab.lib.colors.toColor docstring.
@@ -240,7 +274,7 @@ class PDFFile(Exportable):
         self.c.setStrokeColor(toColor(color))
         self.c.rect(start_point.x, start_point.y, width, height)
 
-    def add_image(self, image_path: Path | str, start_point: Point, height: int, width: int):
+    def __add_image(self, image_path: Path | str, start_point: Point, height: int, width: int):
         """
         Adds an image to the PDF file.
         to avoid problems, 'image_path' should be an absolute path.
@@ -261,7 +295,7 @@ class PDFFile(Exportable):
             image = ImageReader(image_path)
             self.c.drawImage(image, start_point.x, start_point.y, height, width)  # Ajusta la posición y el tamaño
         except IOError:
-            self.add_textline(start_point, 'Imagen no encontrada', 'left')
+            self.__add_textline(start_point, 'Imagen no encontrada', 'left')
 
     @classmethod
     def change_font(cls, new_font: Optional[str] = None, new_font_size: Optional[int] = None) -> None:
@@ -281,6 +315,198 @@ class PDFFile(Exportable):
         if new_font_size is not None:
             cls.FONT_SIZE = new_font_size
 
+    def __generate_offer(self, content: PDFOffer) -> None:
+        """
+        Creates a PDF File using a template for 'Sixerr (Post) offer'
+
+        Parameters
+        ----------
+        content: PDFOffer
+            Content of the Post to be written
+        """
+        height = self.height
+
+        # Logo Sixerr
+        type(self).change_font('Helvetica-Bold', 16)
+        height -= 100
+        self.__add_image(self.sixerr_logo, Point(50, height), 100, 100)
+
+        # Tipo de post
+        type(self).change_font('Helvetica', 12)
+        self.__add_textline(Point(550, height + 50), 'Oferta', 'right')
+
+        # Título publicación
+        type(self).change_font(new_font_size=22)
+        height -= 20
+        self.__add_textline(Point(self.width // 2, height), content.title, 'center')
+        height -= 20
+        self.__draw_line(Point(75, height), Point(525, height))
+
+        # Usuario
+        type(self).change_font('Helvetica', 12)
+        height -= 30
+        self.__add_textline(Point(500, height), f'Publicado por: {content.user}', 'right')
+
+        # Precio
+        type(self).change_font(new_font_size=20)
+        height -= 13
+        self.__add_textline(Point(100, height), f'{content.price}€', 'left', 'rgb(116, 175, 76)')
+
+        # Fecha de publicación
+        type(self).change_font(new_font_size=8)
+        height -= 7
+        self.__add_textline(Point(500, height), f'Fecha publicación: {content.publication_date.strftime("%d/%m/%Y")}',
+                            'right')
+        height -= 20
+        self.__draw_line(Point(75, height), Point(525, height))
+
+        # Categoría
+        height -= 30
+        self.__draw_square(Point(75, height), 200, 25)
+        height += 10
+        self.__add_textline(Point(80, height), f'Categoría: {content.category}', 'left')
+
+        # Descripción
+        type(self).change_font(new_font_size=12)
+        height -= 65
+        height = self.__add_paragraph(Point(75, height), content.description, 85, 'left')
+        self.__draw_line(Point(75, height), Point(525, height))
+
+        # imagen
+        height -= 150
+        self.__add_image(content.image, Point(250, height), 100, 100)
+
+
+    def __generate_demand(self, content: PDFDemand) -> None:
+        """
+        Creates a PDF File using a template for 'Sixerr (Post) demand'
+
+        Parameters
+        ----------
+        content: PDFDemand
+            Content of the Post to be written
+        """
+        height = self.height
+
+        # Logo Sixerr
+        type(self).change_font('Helvetica-Bold', 16)
+        height -= 100
+        self.__add_image(self.sixerr_logo, Point(50, height), 100, 100)
+
+        # Tipo de post
+        type(self).change_font('Helvetica', 12)
+        self.__add_textline(Point(550, height + 50), 'Demanda', 'right')
+
+        # Título publicación
+        type(self).change_font(new_font_size=22)
+        height -= 20
+        self.__add_textline(Point(self.width // 2, height), content.title, 'center')
+        height -= 20
+        self.__draw_line(Point(75, height), Point(525, height), 'rgb(34, 139, 34)')
+
+        # Usuario
+        type(self).change_font('Helvetica', 12)
+        height -= 15
+        self.__add_textline(Point(75, height), f'Publicado por: {content.user}', 'left')
+
+        # Fecha de publicación
+        type(self).change_font(new_font_size=8)
+        self.__add_textline(Point(500, height), f'Fecha publicación: {content.publication_date.strftime("%d/%m/%Y")}',
+                            'right')
+
+        # Urgencia
+        type(self).change_font(new_font_size=12)
+        height -= 25
+        urgency_info = {1: ['Muy baja', 'rgb(0, 51, 102)'], 2: ['Baja', 'rgb(0, 102, 204)'],
+                        3: ['Intermedia', 'rgb(0, 153, 153)'], 4: ['Alta', 'rgb(255, 153, 51)'],
+                        5: ['Muy alta', 'rgb(204, 0, 0)']}
+        urgency_str, color = urgency_info.get(content.urgency)
+        self.__add_textline(Point(75, height),
+                            f'Urgencia: {urgency_str} ({content.urgency})',
+                            'left', color)
+
+        height -= 15
+        self.__draw_line(Point(75, height), Point(525, height), 'rgb(34, 139, 34)')
+
+        # Categoría
+        height -= 30
+        self.__draw_square(Point(75, height), 200, 25)
+        height += 10
+        self.__add_textline(Point(80, height), f'Categoría: {content.category}', 'left')
+
+        # Descripción
+        type(self).change_font(new_font_size=12)
+        height -= 50
+        height = self.__add_paragraph(Point(75, height), content.description, 85, 'left')
+        self.__draw_line(Point(75, height), Point(525, height), 'rgb(34, 139, 34)')
+
+        # imagen
+        height -= 150
+        self.__add_image(content.image, Point(250, height), 100, 100)
+
+
+    def __generate_freelancer_profile(self, content: PDFFreelancer) -> None:
+        height = self.height
+
+        # Logo Sixerr
+        type(self).change_font('Helvetica-Bold', 16)
+        height -= 100
+        self.__add_image(self.sixerr_logo, Point(50, height), 100, 100)
+
+        # Información del usuario
+        # Nombre
+        type(self).change_font(new_font_size=18)
+        height -= 20
+        self.__add_textline(Point(75, height), content.nombre, 'left')
+
+        # Username
+        type(self).change_font('Helvetica', new_font_size=12)
+        height -= 20
+        self.__add_textline(Point(75, height), content.username, 'left', 'rgb(128, 128, 128)')
+
+        # Tipo de cuenta
+        type(self).change_font(new_font_size=14)
+        height -= 30
+        self.__add_textline(Point(75, height), 'Tipo de cuenta: Freelancer', 'left')
+
+        # Email
+        type(self).change_font(new_font_size=12)
+        height += 42
+        self.__add_textline(Point(550, height), f'Email: {content.email}', 'right')
+
+        # Teléfono
+        height -= 20
+        self.__add_textline(Point(550, height), f'Teléfono: {content.telefono}', 'right')
+
+        height -= 42
+        self.__draw_line(Point(75, height), Point(550, height))
+
+        # Habilidades
+        type(self).change_font(new_font_size=14)
+        height -= 20
+        habilidades_str = reduce(lambda x, y: x + ', ' + y, content.habilidades)
+        height = self.__add_paragraph(Point(75, height), f'Habilidades: {habilidades_str}', 90, 'left')
+
+        # Reseñas
+        height -= 20
+        review_color = {3: 'rgb(178, 34, 34)', 5: 'rgb(255, 69, 0)',
+                        7: 'rgb(255, 165, 0)', 9: 'rgb(255, 215, 0)', 10: 'rgb(50, 205, 50)'}
+        self.__add_textline(Point(75, height), f'{content.rating} de Valoración', 'left')
+
+        height -= 20
+        self.__draw_line(Point(75, height), Point(550, height))
+
+        # Posts creados
+        height -= 20
+        self.__add_textline(Point(75, height), f'Posts de {content.nombre}:', 'left')
+
+        height -= 20
+        posts_str = reduce(lambda x, y: x + '\n- ' + y, content.posts)
+        self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
+
+    def __generate_consumer_profile(self, content: PDFConsumer) -> None:
+        ...
+
     def write(self, content: PDFContent) -> str:
         """
         Writes content to a .pdf file
@@ -295,54 +521,16 @@ class PDFFile(Exportable):
         str
             System path to the generated file
         """
-        # ===== CREACIÓN ARCHIVO PDF PUBLICACIÓN (OFERTA) =====
-        height = self.height
-
-        # Logo Sixerr
-        type(self).change_font('Helvetica-Bold', 16)
-        height -= 50
-        self.add_textline(Point(50, height), 'Sixerr', 'left')
-
-        # Título publicación
-        type(self).change_font(new_font_size = 22)
-        height -= 50
-        self.add_textline(Point(self.width // 2 , height), content.title, 'center')
-        height -= 20
-        self.draw_line(Point(75, height), Point(525, height))
-
-        # Usuario
-        type(self).change_font('Helvetica', 12)
-        height -= 30
-        self.add_textline(Point(500, height), f'Publicado por: {content.user}', 'right')
-
-        # Precio
-        type(self).change_font(new_font_size=20)
-        height -= 13
-        self.add_textline(Point(100, height), f'{content.price}€', 'left', 'rgb(116, 175, 76)')
-
-        # Fecha de publicación
-        type(self).change_font(new_font_size = 8)
-        height -= 7
-        self.add_textline(Point(500, height), f'Fecha publicación: {content.publication_date.strftime("%d/%m/%Y")}', 'right')
-        height -= 20
-        self.draw_line(Point(75, height), Point(525, height))
-
-        # Categoría
-        height -= 30
-        self.draw_square(Point(75, height), 200, 25)
-        height += 10
-        self.add_textline(Point(80, height), f'Categoría: {content.category}', 'left')
-
-        # Descripción
-        type(self).change_font(new_font_size=12)
-        height -= 65
-        height = self.add_paragraph(Point(75, height), content.description, 85, 'left')
-        self.draw_line(Point(75, height), Point(525, height))
-
-        # imagen
-        height -= 150
-        self.add_image(content.image, Point(250, height), 100, 100)
-
+        if isinstance(content, PDFOffer):
+            self.__generate_offer(content)
+        elif isinstance(content, PDFDemand):
+            self.__generate_demand(content)
+        elif isinstance(content, PDFFreelancer):
+            self.__generate_freelancer_profile(content)
+        elif isinstance(content, PDFConsumer):
+            self.__generate_consumer_profile(content)
+        else:
+            raise TypeError('Content to be written must be a "PDFContent" instance')
         # Guardado del archivo .pdf
         self.c.save()
         return self.path.absolute
@@ -350,17 +538,43 @@ class PDFFile(Exportable):
 
 # Tests
 if __name__ == '__main__':
-    f = PDFFile('archivo.pdf')
     # Lorem ipsum de ejemplo
     data_text = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
 Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis dictum sit amet, sollicitudin ut lorem. Sed accumsan in enim at porta. Pellentesque dolor enim, aliquam ac libero vitae, porttitor laoreet neque. Suspendisse molestie eu metus sit amet tincidunt. Curabitur in arcu diam. Cras vel justo dictum, sollicitudin odio eu, maximus turpis. Nulla eget convallis velit. Maecenas metus velit, feugiat at pellentesque vitae, pellentesque id mi. Praesent suscipit ante quis elit lacinia, sit amet vehicula enim sollicitudin. Sed sit amet tempus sem. Ut iaculis elit quis ex dictum, nec tristique ipsum convallis."""
+
+    # OFERTA
+    f = PDFFile('offertest.pdf')
     pdf_content = PDFOffer(
+       title='Titulo de Ejemplo',
+       description=data_text,
+       price=59.99,
+       user='Usuario Ejemplo',
+       image=Path('imagen.jpg').absolute,
+       category='Clases particulares',
+       publication_date=datetime.now())
+    print(f.write(pdf_content))
+
+    # DEMANDA
+    f2 = PDFFile('demandtest.pdf')
+    pdf_content2 = PDFDemand(
         title='Titulo de Ejemplo',
         description=data_text,
-        price=59.99,
+        urgency=5,
         user='Usuario Ejemplo',
         image=Path('imagen.jpg').absolute,
         category='Clases particulares',
-        publication_date=datetime.now(),
-    )
-    print(f.write(pdf_content))
+        publication_date=datetime.now())
+    print(f2.write(pdf_content2))
+
+    # FREELANCER
+    f3 = PDFFile('freelancertest.pdf')
+    pdf_content3 = PDFFreelancer(
+        username='Juanpe777',
+        nombre='Juan Pérez',
+        email='juanpe77@gmail.com',
+        telefono='+34 123 456 789',
+        posts={'Post1', 'Post2', 'Post3'},
+        habilidades=['Profesor', 'Ejemplo2', 'Ejemplo 3'],
+        opiniones=[8, 10, 7, 10],
+        rating=8.75)
+    print(f3.write(pdf_content3))

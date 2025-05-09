@@ -25,5 +25,5 @@ PDFFile - WIP (.pdf_file.py)
 from .path import Path
 from .file import File, Importable, Exportable
 from .csv_file import CSVFile
-from .pdf_file import PDFFile
+from .pdf_file import PDFFile, PDFOffer, PDFDemand, PDFConsumer, PDFFreelancer
 from .xml_file import XMLFile
