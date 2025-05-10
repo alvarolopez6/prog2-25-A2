@@ -1,7 +1,7 @@
 """
 Module pdf_file.py
 
-Defines class 'PDFFile(Exportable)' for writing PDF files
+Defines class 'PDFFile(Exportable)' and dataclasses 'PDFContent' for writing PDF files
 
 Author: Ismael Escribano
 Creation Date: 05-05-2025
@@ -20,7 +20,9 @@ from reportlab.lib.utils import ImageReader
 
 
 from file_utils import Path, Exportable
-
+from generic_posts import Post
+from demand import Demand
+from offer import Offer
 
 
 class AlignmentError(Exception):
@@ -44,6 +46,13 @@ class AlignmentError(Exception):
 class Point:
     """
     Dataclass that represents a Point
+
+    Parameters
+    ----------
+    x: float
+        X coordinate
+    y: float
+        Y coordinate
     """
     x: float
     y: float
@@ -51,7 +60,22 @@ class Point:
 @dataclass
 class PDFPost:
     """
-    Dataclass that represents basic content for writing a PDF File for Posts
+    Dataclass that represents basic content for writing a PDF File for Sixerr Posts
+
+    Parameters
+    ----------
+    title: str
+        Title of the post
+    description: str
+        Description of the post
+    user: str
+        User who publishes the content.
+    image: Path | str
+        Image associated with the post
+    category: str
+        Category associated with the post
+    publication_date: datetime
+        Date the post was published
     """
     title: str
     description: str
@@ -63,7 +87,12 @@ class PDFPost:
 @dataclass
 class PDFOffer(PDFPost):
     """
-    Dataclass with basic content and specific 'Offer' class content
+    Dataclass with basic Sixerr Post content and specific 'Offer' class content
+
+    Parameters
+    ----------
+    price: float
+        Price of the offer
     """
     price: float
 
@@ -71,6 +100,11 @@ class PDFOffer(PDFPost):
 class PDFDemand(PDFPost):
     """
     Dataclass with basic content and specific 'Demand' class content
+
+    Parameters
+    ----------
+    urgency: int
+        Level of urgency (from 1 to 5)
     """
     urgency: int
 
@@ -78,29 +112,63 @@ class PDFDemand(PDFPost):
 class PDFUser:
     """
     Dataclass with basic content for writing a PDF File for User profiles
+
+    Parameters
+    ----------
+    username: str
+        a unique string used to identify the user
+    nombre: str
+        name of the user
+    email: str
+        email of the user
+    telefono: str
+        phone number of the user
+    posts: set[Post]
+        list with all Post created by the user
     """
     username: str
     nombre: str
     email: str
     telefono: str
-    posts: set[str] # TODO: Cambiar 'set[str]' -> 'set[Post]'
+    posts: set[Post]
+
 
 @dataclass
 class PDFFreelancer(PDFUser):
     """
     Dataclass with basic content and specific 'Freelancer' class content
+
+    Parameters
+    ----------
+    habilidades: list[str]
+        list with all the perks that the freelancer have
+    opiniones: list[int]
+        list with all the ratings of the costumers
+    rating: float
+        rating of the freelancer
     """
     habilidades: list[str]
     opiniones: list[int]
     rating: float
 
+@dataclass
 class PDFConsumer(PDFUser):
     """
     Dataclass with basic content and specific 'Consumer' class content
+
+    Parameters
+    ----------
+    metodo_de_pago: str
+        Consumer's payment method
+    pocket: int
+        Consumer's remaining virtual pocket balance
+    servicios_contratados: set[Offer]
+        List with all Offers hired by the Consumer
     """
     metodo_de_pago: str
     pocket: int
-    servicios_contratados: set[str] # TODO: Cambiar 'set[str]' -> 'set[Offer]'
+    servicios_contratados: set[Offer]
+
 
 PDFContent = Union[PDFOffer, PDFDemand, PDFFreelancer, PDFConsumer]
 
@@ -128,22 +196,31 @@ class PDFFile(Exportable):
 
     Methods
     -------
-    add_textline(start_point: Point, text: str, align: str, color: Optional[str]) -> None
+    __add_textline(start_point: Point, text: str, align: str, color: Optional[str]) -> None
         Adds a text line to the PDF file
-    add_paragraph(start_point: Point, text: str, width: int align: str, color: Optional[str]) -> float
+    __add_paragraph(start_point: Point, text: str, width: int align: str, color: Optional[str]) -> float
         Adds one or more paragraph(s) to the PDF file
-    draw_line(point1: Point, point2: Point, color: Optional[str]) -> None
+    __draw_line(point1: Point, point2: Point, color: Optional[str]) -> None
         Draws a line to the PDF file
-    draw_square(start_point: Point, width: int, height: int, color: Optional[str]) -> None
+    __draw_square(start_point: Point, width: int, height: int, color: Optional[str]) -> None
         Draws a rectangle to the PDF file
-    add_image(image_path: Path | str, start_point: Point, height: int, width: int) -> None
+    __add_image(image_path: Path | str, start_point: Point, height: int, width: int) -> None
         Adds an image to the PDF file
-    change_font(new_font: Optional[str], new_font_size: Optional[int]) -> None
+    __change_font(new_font: Optional[str], new_font_size: Optional[int]) -> None
         Changes the font and its size
+    __generate_offer(content: PDFOffer) -> None
+        Creates a PDF file for Sixerr Offer
+    __generate_demand(content: PDFDemand) -> None
+        Creates a PDF file for Sixerr Demand
+    __generate_freelancer_profile(content: PDFFreelancer) -> None
+        Creates a PDF file for Sixerr Freelancer
+    __generate_consumer_profile(content: PDFConsumer) -> None
+        Creates a PDF file for Sixerr Consumer
     write(content: PDFContent) -> None
         Writes content to a PDF file
     """
     sixerr_logo = Path('../data/images/sixerrlogo.png').absolute
+
     def __init__(self, path: Path | str) -> None:
         """
         Initializes a PDFFile instance
@@ -195,7 +272,7 @@ class PDFFile(Exportable):
             case _:
                 raise AlignmentError(align)
 
-    def __add_paragraph(self, start_point: Point, text: str | list[str, ...], width: int, align: str,
+    def __add_paragraph(self, start_point: Point, text: str, width: int, align: str,
                       color: Optional[str] = 'rgb(0, 0, 0)') -> float:
         """
         Adds one or more paragraph(s) (multiple lines) to a PDF file, font and font size must be defined.
@@ -206,7 +283,7 @@ class PDFFile(Exportable):
         ----------
         start_point: Point
             Coordinates of the start of the paragraph
-        text: str | list[str, ...]
+        text: str
             Text to be written
         width: int
             Width of the paragraph
@@ -220,12 +297,15 @@ class PDFFile(Exportable):
         float
             Final 'Y' coordinate of the paragraph
         """
-        text = text.splitlines() # FIXME: Si hay varios saltos de línea solo se muestra uno
+        text = text.splitlines()
         for i in text:
-            paragraph = wrap(i, width)
-            for line in paragraph:
-                self.__add_textline(start_point, line, align, color)
-                start_point.y -= (type(self).FONT_SIZE + 2)
+            if i.strip() == '':
+                start_point.y -= type(self).FONT_SIZE + 2
+            else:
+                paragraph = wrap(i, width)
+                for line in paragraph:
+                    self.__add_textline(start_point, line, align, color)
+                    start_point.y -= type(self).FONT_SIZE + 2
         return start_point.y
 
     def __draw_line(self, point1: Point, point2: Point, color: Optional[str] = 'rgb(69, 114, 196)') -> None:
@@ -274,7 +354,7 @@ class PDFFile(Exportable):
         self.c.setStrokeColor(toColor(color))
         self.c.rect(start_point.x, start_point.y, width, height)
 
-    def __add_image(self, image_path: Path | str, start_point: Point, height: int, width: int):
+    def __add_image(self, image_path: Path | str, start_point: Point, height: int, width: int) -> None:
         """
         Adds an image to the PDF file.
         to avoid problems, 'image_path' should be an absolute path.
@@ -446,6 +526,14 @@ class PDFFile(Exportable):
 
 
     def __generate_freelancer_profile(self, content: PDFFreelancer) -> None:
+        """
+        Creates a PDF File using a template for 'Sixerr (User) freelancer'
+
+        Parameters
+        ----------
+        content: PDFFreelancer
+            Content of the Post to be written
+        """
         height = self.height
 
         # Logo Sixerr
@@ -489,9 +577,15 @@ class PDFFile(Exportable):
 
         # Reseñas
         height -= 20
-        review_color = {3: 'rgb(178, 34, 34)', 5: 'rgb(255, 69, 0)',
-                        7: 'rgb(255, 165, 0)', 9: 'rgb(255, 215, 0)', 10: 'rgb(50, 205, 50)'}
-        self.__add_textline(Point(75, height), f'{content.rating} de Valoración', 'left')
+        review_color = {3: 'rgb(178, 34, 34)', 5: 'rgb(255, 165, 0)',
+                        7: 'rgb(204, 204, 0)', 9: 'rgb(0, 128, 0)', 10: 'rgb(100, 200, 100)'}
+        for key in review_color.keys():
+            if content.rating <= key:
+                color = review_color[key]
+                break
+        else:
+            color = 'rgb(0, 0, 0)'
+        self.__add_textline(Point(75, height), f'{content.rating} de Valoración', 'left', color)
 
         height -= 20
         self.__draw_line(Point(75, height), Point(550, height))
@@ -501,15 +595,86 @@ class PDFFile(Exportable):
         self.__add_textline(Point(75, height), f'Posts de {content.nombre}:', 'left')
 
         height -= 20
-        posts_str = reduce(lambda x, y: x + '\n- ' + y, content.posts)
+        posts_names = map(lambda x: x.title, content.posts)
+        posts_str = reduce(lambda x, y: x + '\n- ' + y, set(posts_names))
         self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
 
     def __generate_consumer_profile(self, content: PDFConsumer) -> None:
-        ...
+        """
+        Creates a PDF File using a template for 'Sixerr (User) Consumer'
+
+        Parameters
+        ----------
+        content: PDFConsumer
+            Content of the Post to be written
+        """
+        height = self.height
+
+        # Logo Sixerr
+        type(self).change_font('Helvetica-Bold', 16)
+        height -= 100
+        self.__add_image(self.sixerr_logo, Point(50, height), 100, 100)
+
+        # Información del usuario
+        # Nombre
+        type(self).change_font(new_font_size=18)
+        height -= 20
+        self.__add_textline(Point(75, height), content.nombre, 'left')
+
+        # Username
+        type(self).change_font('Helvetica', new_font_size=12)
+        height -= 20
+        self.__add_textline(Point(75, height), content.username, 'left', 'rgb(128, 128, 128)')
+
+        # Tipo de cuenta
+        type(self).change_font(new_font_size=14)
+        height -= 30
+        self.__add_textline(Point(75, height), 'Tipo de cuenta: Consumer', 'left')
+
+        # Email
+        type(self).change_font(new_font_size=12)
+        height += 55
+        self.__add_textline(Point(550, height), f'Email: {content.email}', 'right')
+
+        # Teléfono
+        height -= 20
+        self.__add_textline(Point(550, height), f'Teléfono: {content.telefono}', 'right')
+
+        # Método de pago
+        height -= 20
+        self.__add_textline(Point(550, height), f'Método de pago: {content.metodo_de_pago}', 'right')
+
+        height -= 20
+        self.__add_textline(Point(550, height), f'Saldo disponible: {content.pocket}€', 'right')
+
+        height -= 22
+        self.__draw_line(Point(75, height), Point(550, height), color='rgb(113, 173, 72)')
+
+        # Posts creados (demandas)
+        height -= 20
+        self.__add_textline(Point(75, height), f'Servicios solicitados por {content.nombre}:', 'left')
+
+        height -= 20
+        posts_names = map(lambda x: x.title, content.posts)
+        posts_str = reduce(lambda x, y: x + '\n- ' + y, set(posts_names))
+        height = self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
+
+        self.__draw_line(Point(75, height), Point(550, height), color='rgb(113, 173, 72)')
+
+        # Servicios contratados
+        height -= 20
+        self.__add_textline(Point(75, height), f'Servicios contratados por {content.nombre}:', 'left')
+
+        height -= 20
+        services_str = str()
+        for post in content.servicios_contratados:
+            services_str += f'- {post.title} (Creado por: {post.user})\n'
+        self.__add_paragraph(Point(75, height), services_str, 100, 'left')
 
     def write(self, content: PDFContent) -> str:
         """
-        Writes content to a .pdf file
+        Writes content to a .pdf file.
+        Calls a '__generate_X' method according to the content instance type
 
         Parameters
         ----------
@@ -519,7 +684,12 @@ class PDFFile(Exportable):
         Returns
         -------
         str
-            System path to the generated file
+            System absolute path to the generated file
+
+        Raises
+        ------
+        TypeError
+            If 'content' is not a PDFContent instance
         """
         if isinstance(content, PDFOffer):
             self.__generate_offer(content)
@@ -540,10 +710,12 @@ class PDFFile(Exportable):
 if __name__ == '__main__':
     # Lorem ipsum de ejemplo
     data_text = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis dictum sit amet, sollicitudin ut lorem. Sed accumsan in enim at porta. Pellentesque dolor enim, aliquam ac libero vitae, porttitor laoreet neque. Suspendisse molestie eu metus sit amet tincidunt. Curabitur in arcu diam. Cras vel justo dictum, sollicitudin odio eu, maximus turpis. Nulla eget convallis velit. Maecenas metus velit, feugiat at pellentesque vitae, pellentesque id mi. Praesent suscipit ante quis elit lacinia, sit amet vehicula enim sollicitudin. Sed sit amet tempus sem. Ut iaculis elit quis ex dictum, nec tristique ipsum convallis."""
+Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis dictum sit amet, sollicitudin ut lorem. 
+
+Sed accumsan in enim at porta. Pellentesque dolor enim, aliquam ac libero vitae, porttitor laoreet neque. Suspendisse molestie eu metus sit amet tincidunt. Curabitur in arcu diam. Cras vel justo dictum, sollicitudin odio eu, maximus turpis. Nulla eget convallis velit. Maecenas metus velit, feugiat at pellentesque vitae, pellentesque id mi. Praesent suscipit ante quis elit lacinia, sit amet vehicula enim sollicitudin. Sed sit amet tempus sem. Ut iaculis elit quis ex dictum, nec tristique ipsum convallis."""
 
     # OFERTA
-    f = PDFFile('offertest.pdf')
+    f = PDFFile('../data/OfferTest.pdf')
     pdf_content = PDFOffer(
        title='Titulo de Ejemplo',
        description=data_text,
@@ -552,10 +724,11 @@ Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis di
        image=Path('imagen.jpg').absolute,
        category='Clases particulares',
        publication_date=datetime.now())
+    print('PDF Generado en:')
     print(f.write(pdf_content))
 
     # DEMANDA
-    f2 = PDFFile('demandtest.pdf')
+    f2 = PDFFile('../data/DemandTest.pdf')
     pdf_content2 = PDFDemand(
         title='Titulo de Ejemplo',
         description=data_text,
@@ -564,17 +737,39 @@ Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis di
         image=Path('imagen.jpg').absolute,
         category='Clases particulares',
         publication_date=datetime.now())
+    print('PDF Generado en:')
     print(f2.write(pdf_content2))
 
     # FREELANCER
-    f3 = PDFFile('freelancertest.pdf')
+    f3 = PDFFile('../data/FreelancerTest.pdf')
     pdf_content3 = PDFFreelancer(
         username='Juanpe777',
         nombre='Juan Pérez',
         email='juanpe77@gmail.com',
         telefono='+34 123 456 789',
-        posts={'Post1', 'Post2', 'Post3'},
-        habilidades=['Profesor', 'Ejemplo2', 'Ejemplo 3'],
+        posts={Offer('Title1', 'Ejdesc', 'User1'),
+               Offer('Title2', 'Ejdesc', 'User2'),
+               Offer('Title3', 'Ejdesc', 'User3')},
+        habilidades=['Profesor', 'Ejemplo 2', 'Ejemplo 3'],
         opiniones=[8, 10, 7, 10],
-        rating=8.75)
+        rating=7.5)
+    print('PDF Generado en:')
     print(f3.write(pdf_content3))
+
+    # Consumer
+    f4 = PDFFile('../data/ConsumerTest.pdf')
+    pdf_content4 = PDFConsumer(
+        username='Juanpe777',
+        nombre='Juan Pérez',
+        email='juanpe77@gmail.com',
+        telefono='+34 123 456 789',
+        posts={Demand('Title1', 'Ejdesc', 'User1'),
+               Demand('Title2', 'Ejdesc', 'User2'),
+               Demand('Title3', 'Ejdesc', 'User3')},
+        metodo_de_pago='Paypal',
+        pocket=122,
+        servicios_contratados={Offer('Title1', 'Ejdesc', 'User1'),
+                               Offer('Title2', 'Ejdesc', 'User2'),
+                               Offer('Title3', 'Ejdesc', 'User3')})
+    print('PDF Generado en:')
+    print(f4.write(pdf_content4))
