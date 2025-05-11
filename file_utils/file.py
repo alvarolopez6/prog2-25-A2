@@ -78,7 +78,7 @@ class File:
         str
             String representation of file's system path.
         """
-        return f'System Path: {self.path}'
+        return f'System Path: {self.path.absolute}'
 
 
 class Exportable(ABC, File):
