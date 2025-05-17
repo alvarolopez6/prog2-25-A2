@@ -6,9 +6,10 @@ Defines class 'PDFFile(Exportable)' and dataclasses 'PDFContent' for writing PDF
 Author: Ismael Escribano
 Creation Date: 05-05-2025
 """
+from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
 
 from textwrap3 import wrap
 from datetime import datetime
@@ -20,10 +21,11 @@ from reportlab.lib.utils import ImageReader
 
 
 from file_utils import Path, Exportable
-from generic_posts import Post
-from demand import Demand
-from offer import Offer
 
+if TYPE_CHECKING:
+    from generic_posts import Post
+    from demand import Demand
+    from offer import Offer
 
 class AlignmentError(Exception):
     """
@@ -708,6 +710,8 @@ class PDFFile(Exportable):
 
 # Tests
 if __name__ == '__main__':
+    from demand import Demand
+    from offer import Offer
     # Lorem ipsum de ejemplo
     data_text = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
 Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis dictum sit amet, sollicitudin ut lorem. 
