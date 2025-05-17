@@ -1,5 +1,6 @@
 from user import User
 from offer import Offer
+from generic_posts import Post
 from demand import Demand
 
 
@@ -59,7 +60,7 @@ class Consumer(User):
         """
         super().__init__(username, nombre, password, email, telefono)
         self.metodo_de_pago = metodo_de_pago
-        self.servicios_contratados: set[Offer] = set()
+        self.servicios_contratados: set[Post] = set()
         self.pocket = pocket
 
     def contratar_servicio(self,post)-> None:

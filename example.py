@@ -22,10 +22,13 @@ def main() -> None:
         print("10- Ver todos los posts publicados")
         print("11- Ver tus posts publicados(Freelancer)")
         print("12- Borrar Post (Freelancer)")
-        print("13- Contratar Servicio (Consumer)")
-        print("14- Ver servicios contratados (Consumer)")
-        print("15- Exportar perfil actual a CSV")
-        print("16- Exportar post a CSV")
+        print("13- Agregar Una Categoria a tus Posts")
+        print("14- Contratar Servicio (Consumer)")
+        print("15- Ver servicios contratados (Consumer)")
+        print("16- Exportar perfil actual a CSV")
+        print("17- Exportar post a CSV")
+        print("18- Forza Borrar Una Cuenta (Admin)")
+        print("19- Cancelar el contrato (Consumer)")
         print("0- Salir del programa")
         op=input("POR FAVOR ELIGE LA OPCION ")
         match op:
@@ -158,19 +161,27 @@ def main() -> None:
                 print(r.text)
 
             case '13':
+                # Agregar Categoria
+                r = requests.post(f'{URL}/posts/category?titulo={input("Introduce el titulo: ")}'
+                                    f'&categoria={input("Introduce la categoria que quieres agregar ")}',
+                                    headers={'Authorization': 'Bearer ' + token if token else ''})
+                print(r.status_code)
+                print(r.text)
+
+            case '14':
                 #Contratar Servicios
                 r = requests.post(f'{URL}/usuario/hire?tuser={input("Introduzca el usuario del freelancer que quieres contratar ")}'
                                 f'&titulo={input("Introduzca el titulo de la oferta que quieres contratar ")}', headers={'Authorization': 'Bearer ' + token if token else '' })
                 print(r.status_code)
                 print(r.text)
 
-            case '14':
+            case '15':
                 # Ver servicios contratados (Consumer)
                 r = requests.get(f'{URL}/usuario/hire', headers = {'Authorization': 'Bearer ' + token if token else ''})
                 print(r.status_code)
                 print(r.text)
 
-            case '15':
+            case '16':
                 # Exportar perfil actual a CSV
                 r = requests.get(f'{URL}/usuario/export', headers = {'Authorization': 'Bearer ' + token if token else ''})
                 print(r.status_code)
@@ -179,7 +190,7 @@ def main() -> None:
                         f.write(r.content)
                     print('Perfil exportado como "profile.csv"')
 
-            case '16':
+            case '17':
                 # Exportar post a CSV
                 r = requests.get(f'{URL}/posts/export?titulo={input("Introduzca el titulo del post: ")}', headers = {'Authorization': 'Bearer ' + token if token else ''})
                 print(r.status_code)
@@ -187,5 +198,18 @@ def main() -> None:
                     with open('post.csv', mode='wb') as f:
                         f.write(r.content)
                     print('Post exportado como "post.csv"')
+            case '18':
+                #FORZA QUITAR UNA CUENTA
+                r = requests.delete(f'{URL}/admin?user={input("INTRODUZCA EL USUARIO QUE QUIERES BORRAR: ")}', headers = {'Authorization': 'Bearer ' + token if token else ''})
+                print(r.status_code)
+                print(r.text)
+            case '19':
+                #Cancelar Un Contrato
+                r = requests.delete(
+                    f'{URL}/usuario/hire?tuser={input("Introduzca el usuario del freelancer que con quien quieres finalizar el contrato ")}'
+                    f'&titulo={input("Introduzca el titulo de la oferta que quieres cancelar ")}',
+                    headers={'Authorization': 'Bearer ' + token if token else ''})
+                print(r.status_code)
+                print(r.text)
 
 main()

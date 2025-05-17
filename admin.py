@@ -30,7 +30,7 @@ class Admin(User):
         Deletes a post by its name
 
     """
-    def __init__(self, username: str, nombre: str, password: str, email: str, telefono: int) -> None:
+    def __init__(self, username: str, nombre: str, password: str, email: str, telefono: str =None) -> None:
         """
            Initializes an User instance
 
@@ -47,7 +47,7 @@ class Admin(User):
            telefono: int
                 an int that represents the phone number of users
             """
-        super().__init__(username, nombre, cy.hash_str(password), email, telefono)
+        super().__init__(username, nombre, password, email, telefono)
 
     @staticmethod
     def delete_user(username: str) -> None:
@@ -59,9 +59,7 @@ class Admin(User):
         username: str
             String with the username to be deleted
         """
-        for user in User.user_set:
-            if username == user.username:
-                del user
+        User.usuarios.pop(username)
 
     @staticmethod
     def delete_post(post_name: str) -> None:

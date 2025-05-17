@@ -3,6 +3,7 @@ from flask_jwt_extended import (JWTManager, create_access_token, jwt_required, g
 
 
 from user import User
+from admin import Admin
 from freelancer import Freelancer
 from consumer import Consumer
 from crypto import hash_str
@@ -69,6 +70,7 @@ if __name__ == '__main__':
     app = App()
     Freelancer("Lancer","Lancer","Lancer","Lancer")
     Consumer("Consum","Consum","Consum","Consum")
+    Admin('Admin','Admin','Admin','Admin')
 
     @app.flask.route('/signup', methods=['POST'])
     def signup() -> tuple[str, int]:
@@ -326,8 +328,8 @@ if __name__ == '__main__':
         usuario=User.usuarios[current_user]
         titulo=request.args.get('titulo')
         description=request.args.get('description')
-        precio = request.args.get('price')
         try:
+            precio = float(request.args.get('price'))
             """
             if isinstance(usuario, Freelancer):
                 Offer(title=titulo, description=description, user=current_user, price=int(request.args.get('price')))
@@ -386,6 +388,32 @@ if __name__ == '__main__':
             return ';'.join([i.display_information() for i in Post.posts[current_user]]), 200 # Se puede usar __str__ en vez de display_information
         else:
             return f'User {current_user} no tiene posts en este momento', 404
+
+
+    @app.flask.route('/posts/category', methods=['POST'])
+    @jwt_required()
+    def add_category() -> tuple[str, int]:
+        """
+        Adds Category to own Posts. Requieres a JWT Token.
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Category Added
+                - 404: User has no posts, has no post with that title
+        """
+        current_user = get_jwt_identity()
+        titulo = request.args.get('titulo')
+        category = request.args.get('categoria')
+        try:
+            if current_user in Post.posts:
+                post_category=Post.get_post(current_user,titulo)
+                post_category.add_category(category)
+                return f'La Categoria {category} fue agregada de forma exitosa',200
+            return f'User {current_user} no tiene posts', 404
+        except ValueError as e:
+            return f'{e}',404
 
     @app.flask.route('/posts/user', methods=['DELETE'])
     @jwt_required()
@@ -511,6 +539,71 @@ if __name__ == '__main__':
         except ValueError as e:
             return f'{e}',404
 
+
+    @app.flask.route('/admin', methods=['DELETE'])
+    @jwt_required()
+    def admin_user_delete() -> tuple[str, int]:
+        """
+        A Function that can be only used by Admin to delete any User Account even if he has posts publicated
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: String returned, Operation Completed
+                - 401: Restricted Permision (Only for Admins)
+        """
+        current_user = get_jwt_identity()
+        current_account=User.usuarios[current_user]
+        usertodelete = request.args.get('user')
+        try:
+            if not isinstance(current_account,Admin):
+                raise RestrictionPermission(type(current_account).__name__)
+            elif usertodelete not in User.usuarios:
+                return f'No Existe {usertodelete} en nuestra base de datos',404
+            else:
+                Admin.delete_user(usertodelete)
+                return f'The Account {usertodelete} Has been deleted',200
+        except RestrictionPermission as e:
+            return f'{e}', 401
+
+
+    @app.flask.route('/usuario/hire', methods=['DELETE'])
+    @jwt_required()
+    def cancelar_offer() -> tuple[str, int]:
+        """
+        Lets a Consumer Cancel a freelancer's offer. Requieres JWT Token (Consumer).
+
+        Gets from request arguments freelancer's user and post's title
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Offer Canceled
+                - 404: User does not exist, offer not found
+
+        """
+        current_user = get_jwt_identity()
+        tuser = request.args.get('tuser')
+        titulo = request.args.get('titulo')
+        try:
+            if tuser in User.usuarios:
+                user = User.usuarios[current_user]
+
+                if isinstance(user, Consumer) and isinstance(User.usuarios[tuser], Freelancer):
+                    post_to_cancel=Post.get_post(tuser, titulo)
+                    if post_to_cancel in user.servicios_contratados:
+                        user.servicios_contratados.remove(post_to_cancel)
+                        return f'Offer of {tuser} -> {titulo} Has been deleted from user {current_user}', 200
+                    else:
+                        return f'No Tienes Contratado Este Post',404
+                else:
+                    return 'Tienes que ser Consumer y el usuario Freelancer', 401
+            else:
+                return 'El usuario que introduciste no esta en nuestros base de datos', 404
+        except ValueError as v:
+            return f'{v}', 404
 
 
     app.start()
