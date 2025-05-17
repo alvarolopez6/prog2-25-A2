@@ -1,6 +1,7 @@
 from user import User
 from offer import Offer
 from demand import Demand
+from file_utils import PDFFile, PDFFreelancer
 
 class Freelancer(User):
     """
@@ -88,12 +89,25 @@ class Freelancer(User):
 
     def mostrar_info(self) -> str:
         """
-
         Method that uses the super info from User and extend it with its own information
-
         """
         info=super().mostrar_info()
         return info + f' Habilidades: {self.habilidades} Rating: {self.rating} NºPosts: {len(self.posts)}'
+
+    def export_user_pdf(self, tempdir) -> str:
+        f = PDFFile(f'{tempdir}/User.pdf')
+        pdf_content = PDFFreelancer(
+            username=self.username,
+            nombre=self.nombre,
+            email=self.email,
+            telefono=self.telefono,
+            posts=self.posts,
+            habilidades=self.habilidades,
+            opiniones=self.opiniones,
+            rating=self.rating
+        )
+        f.write(pdf_content)
+        return f.path.absolute
 
     def contratar_demanda(self,demanda):
         """

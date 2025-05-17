@@ -1,7 +1,19 @@
 import crypto as cy
 from generic_posts import Post
-from file_utils import CSVFile, Path
+from file_utils import CSVFile, Path, XMLFile
 from datetime import datetime
+from abc import ABC, abstractmethod
+import multiprocessing as mp
+import tempfile
+import zipfile
+
+try:
+    import zlib
+    compression = zipfile.ZIP_DEFLATED
+except ImportError:
+    compression = zipfile.ZIP_STORED
+
+modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
 """
 @register(
     table='users',
@@ -12,7 +24,7 @@ from datetime import datetime
          'phone':'telefono'}
 )
 """
-class User:
+class User(ABC):
     """
     Main Clase to represent an User
 
@@ -192,7 +204,50 @@ class User:
 
         return has_lower and has_upper and has_digit and has_special
 
-    def export_user(self) -> Path:
+    def export_user_csv(self, tempdir: str) -> str:
+        """
+        Gets user's info and exports it to a CSV file.
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        user_keys: list[str] = [key for key in self.__dict__.keys()]
+        user_values: list[str] = [value for key, value in self.__dict__.items()]
+        f = CSVFile(f'{tempdir}/User.csv')
+        f.write_headers(user_keys)
+        f.write(user_values)
+        return f.path.absolute
+
+    @abstractmethod
+    def export_user_pdf(self, tempdir: str) -> str:
+        """
+        Gets user's info and exports it to a PDF file. (Must be implemented by subclasses).
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        pass
+
+    def export_user_xml(self, tempdir: str) -> str:
+        """
+        Gets user's info and exports it to a XML file.
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        f = XMLFile(f'{tempdir}/User.xml')
+        f.gen_tree('SixerrData')
+        f.write({'type': type(self).__name__, **self.__dict__})
+        f.indent()
+        return f.path.absolute
+
+    def export_user(self) -> str:
         """
         Gets user's info and exports it to a CSV file.
 
@@ -201,14 +256,28 @@ class User:
         Path
             System path to the file
         """
-        user_keys: list[str] = [key for key in self.__dict__.keys() if key != '_password']
-        user_values: list[str] = [value for key, value in self.__dict__.items() if key != '_password']
-        file_name = f'{self.username}_{datetime.now().strftime("%Y%m%d")}.csv'
-        f = CSVFile(f'data/{file_name}')
-        f.write_headers(user_keys)
-        f.write(user_values)
-        return f.path.absolute
+        funcs = [self.export_user_csv, self.export_user_xml] # FIXME: añadir 'self.export_user_pdf' cuando pdf_file.py funcione correctamente
+        proccess: list[mp.Process] = []                                            # Descomentar tambien la línea de abajo de 'z.write'
 
+        temp_dir = tempfile.gettempdir()
+
+        for f in funcs:
+            p = mp.Process(target=f, args=(temp_dir,))
+            proccess.append(p)
+            p.start()
+
+        for p in proccess:
+            p.join()
+
+        file_name = f'{self.username}_{datetime.now().strftime("%Y%m%d")}.zip'
+        zip_file = Path(f'{temp_dir}/{file_name}')
+
+        with zipfile.ZipFile(zip_file.absolute, 'w') as z:
+            z.write(Path(f'{temp_dir}/User.csv').absolute, self.username + '.csv', compress_type=compression)
+        #    z.write(Path(f'{temp_dir}/User.pdf').absolute, self.username + '.pdf', compress_type=compression)
+            z.write(Path(f'{temp_dir}/User.xml').absolute, self.username + '.xml', compress_type=compression)
+
+        return zip_file.absolute
 
     def mostrar_info(self) -> str:
         """

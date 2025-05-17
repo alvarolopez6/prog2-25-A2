@@ -13,6 +13,7 @@ import ast
 
 
 type_to_str = {
+    type(None): 'None',
     int: 'int',
     float: 'float',
     bool: 'bool',
@@ -23,6 +24,7 @@ type_to_str = {
 }
 
 str_to_type = {
+    'None': type(None),
     'int': int,
     'float': float,
     'bool': bool,

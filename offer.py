@@ -1,6 +1,6 @@
 from typing import Optional, Self
 from generic_posts import Post
-from file_utils import CSVFile, Path
+from file_utils import CSVFile, Path, PDFFile, PDFOffer
 
 class Offer(Post):
     """
@@ -66,6 +66,20 @@ class Offer(Post):
                     setattr(obj, f.headers[i], value)
 
         return obj
+
+    def export_post_pdf(self, tempdir) -> str:
+        f = PDFFile(f'{tempdir}/Post.pdf')
+        pdf_content = PDFOffer(
+            title=self.title,
+            description=self.description,
+            user=self.user,
+            image=self.image,
+            price=self.price,
+            publication_date=self.publication_date,
+            category=self.category
+        )
+        f.write(pdf_content)
+        return f.path.absolute
 
     def display_information(self) -> str:
         """

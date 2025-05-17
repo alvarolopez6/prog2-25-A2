@@ -1,6 +1,7 @@
 from user import User
 from offer import Offer
 from demand import Demand
+from file_utils import PDFFile, PDFConsumer
 
 
 class Consumer(User):
@@ -72,6 +73,21 @@ class Consumer(User):
             An object from class Offer that represents offer
         """
         self.servicios_contratados.add(post)
+
+    def export_user_pdf(self, tempdir: str) -> str:
+        f = PDFFile(f'{tempdir}/Post.pdf')
+        pdf_content = PDFConsumer(
+            username=self.username,
+            nombre=self.nombre,
+            email=self.email,
+            telefono=self.telefono,
+            posts=self.posts,
+            metodo_de_pago=self.metodo_de_pago,
+            pocket=self.pocket,
+            servicios_contratados=self.servicios_contratados
+        )
+        f.write(pdf_content)
+        return f.path.absolute
 
     def mostrar_info(self) -> str:
         """

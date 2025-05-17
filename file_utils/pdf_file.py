@@ -221,7 +221,7 @@ class PDFFile(Exportable):
     write(content: PDFContent) -> None
         Writes content to a PDF file
     """
-    sixerr_logo = Path('../data/images/sixerrlogo.png').absolute
+    sixerr_logo = Path('./data/images/sixerrlogo.png').absolute
 
     def __init__(self, path: Path | str) -> None:
         """
@@ -597,7 +597,7 @@ class PDFFile(Exportable):
         self.__add_textline(Point(75, height), f'Posts de {content.nombre}:', 'left')
 
         height -= 20
-        posts_names = map(lambda x: x.title, content.posts)
+        posts_names = map(lambda x: x.title, content.posts) #FIXME : Si no hay posts, salta 'TypeError'
         posts_str = reduce(lambda x, y: x + '\n- ' + y, set(posts_names))
         self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
 

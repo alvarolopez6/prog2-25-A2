@@ -1,7 +1,19 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Self
 from datetime import datetime
-from file_utils import CSVFile, Path
+from file_utils import CSVFile, Path, XMLFile
+import multiprocessing as mp
+import tempfile
+import zipfile
+
+try:
+    import zlib
+    compression = zipfile.ZIP_DEFLATED
+except ImportError:
+    compression = zipfile.ZIP_STORED
+
+modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
+
 '''
 @Database.register(
     table='posts',
@@ -128,20 +140,19 @@ class Post(ABC):
         """
         return self.category
 
-    def export_post(self) -> Path:
+    def export_post_csv(self, tempdir) -> str:
         """
         Gets a post data and exports it to a CSV file
 
         Returns
         -------
-        Path
-            System path to the file
+        str
+            Absolute System path to the file
         """
         post_keys: list[str] = [key for key in self.__dict__.keys()]
         post_keys.append('post_type')
         post_values: list[str] = [value for value in self.__dict__.values()]
-        file_name = f'{self.title}_{datetime.now().strftime("%Y%m%d")}.csv'
-        f = CSVFile(f'data/{file_name}')
+        f = CSVFile(f'{tempdir}/Post.csv')
         if type(self).__name__ == 'Offer':
             post_values.append('Offer')
         elif type(self).__name__ == 'Demand':
@@ -149,6 +160,69 @@ class Post(ABC):
         f.write_headers(post_keys)
         f.write(post_values)
         return f.path.absolute
+
+    @abstractmethod
+    def export_post_pdf(self, tempdir) -> str:
+        """
+        Gets a post data and exports it to a PDF file. (Must be implemented in subclasses)
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        pass
+
+    def export_post_xml(self, tempdir) -> str:
+        """
+        Gets post's data and exports it to a XML file.
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        f = XMLFile(f'{tempdir}/Post.xml')
+        f.gen_tree('SixerrData')
+        data_dict = {'type': type(self).__name__, **self.__dict__,
+                     'publication_date': self.publication_date.strftime('%Y/%m/%d')}
+        f.write(data_dict)
+        f.indent()
+        return f.path.absolute
+
+    def export_post(self) -> str:
+        """
+        Gets a post data and exports it to a CSV file
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        funcs = [self.export_post_csv, self.export_post_pdf, self.export_post_xml]
+        proccess: list[mp.Process] = []
+
+        temp_dir = tempfile.gettempdir()
+
+        for f in funcs:
+            p = mp.Process(target=f, args=(temp_dir,))
+            proccess.append(p)
+            p.start()
+
+        for p in proccess:
+            p.join()
+
+        file_name = f'{self.title}_{datetime.now().strftime("%Y%m%d")}.zip'
+        zip_file = Path(f'{temp_dir}/{file_name}')
+
+        with zipfile.ZipFile(zip_file.absolute, 'w') as z:
+            z.write(Path(f'{temp_dir}/Post.csv').absolute, self.title + '.csv', compress_type=compression)
+            z.write(Path(f'{temp_dir}/Post.pdf').absolute, self.title + '.pdf', compress_type=compression)
+            z.write(Path(f'{temp_dir}/Post.xml').absolute, self.title + '.xml', compress_type=compression)
+
+        return zip_file.absolute
+
+
 
     @classmethod
     @abstractmethod
