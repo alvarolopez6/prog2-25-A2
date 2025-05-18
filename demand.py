@@ -1,6 +1,7 @@
 from generic_posts import Post
 from typing import Optional, Self
-from file_utils import CSVFile, Path, PDFFile, PDFDemand
+from file_utils import CSVFile, Path, PDFFile, PDFDemand, XMLFile
+
 
 class Demand(Post):
     """
@@ -38,7 +39,7 @@ class Demand(Post):
         self.urgency = urgency
 
     @classmethod
-    def import_post(cls, path: str | Path) -> Self: # from_csv()
+    def import_post_csv(cls, path: str | Path) -> Self: # from_csv()
         """
         Imports a post from a CSV file.  (Must be implemented in subclasses)
 
@@ -66,6 +67,17 @@ class Demand(Post):
                     setattr(obj, f.headers[i], value)
         return obj
 
+    @classmethod
+    def import_post_xml(cls, path: str | Path) -> Self:
+        f = XMLFile(path)
+        obj = cls.__new__(cls)
+        for key, value in f.read().items():
+            if key == 'type' and value != 'Demand':
+                raise NotImplementedError('Post type is not Demand')
+            setattr(obj, key, value)
+
+        return obj
+
     def export_post_pdf(self, tempdir) -> str:
         f = PDFFile(f'{tempdir}/Post.pdf')
         pdf_content = PDFDemand(
@@ -79,6 +91,7 @@ class Demand(Post):
         )
         f.write(pdf_content)
         return f.path.absolute
+
 
     def display_information(self) -> str:
         """

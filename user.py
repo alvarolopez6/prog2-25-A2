@@ -3,6 +3,7 @@ from generic_posts import Post
 from file_utils import CSVFile, Path, XMLFile
 from datetime import datetime
 from abc import ABC, abstractmethod
+from typing import Self
 import multiprocessing as mp
 import tempfile
 import zipfile
@@ -256,8 +257,8 @@ class User(ABC):
         Path
             System path to the file
         """
-        funcs = [self.export_user_csv, self.export_user_xml] # FIXME: añadir 'self.export_user_pdf' cuando pdf_file.py funcione correctamente
-        proccess: list[mp.Process] = []                                            # Descomentar tambien la línea de abajo de 'z.write'
+        funcs = [self.export_user_csv, self.export_user_xml]
+        proccess: list[mp.Process] = []
 
         temp_dir = tempfile.gettempdir()
 
@@ -274,10 +275,20 @@ class User(ABC):
 
         with zipfile.ZipFile(zip_file.absolute, 'w') as z:
             z.write(Path(f'{temp_dir}/User.csv').absolute, self.username + '.csv', compress_type=compression)
-        #    z.write(Path(f'{temp_dir}/User.pdf').absolute, self.username + '.pdf', compress_type=compression)
+            z.write(Path(f'{temp_dir}/User.pdf').absolute, self.username + '.pdf', compress_type=compression)
             z.write(Path(f'{temp_dir}/User.xml').absolute, self.username + '.xml', compress_type=compression)
 
         return zip_file.absolute
+
+    @classmethod
+    @abstractmethod
+    def import_user_csv(cls, path: str | Path) -> Self:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def import_user_xml(cls, path: str | Path) -> Self:
+        pass
 
     def mostrar_info(self) -> str:
         """

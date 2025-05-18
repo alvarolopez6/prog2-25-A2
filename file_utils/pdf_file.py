@@ -127,12 +127,15 @@ class PDFUser:
         phone number of the user
     posts: set[Post]
         list with all Post created by the user
+    money: float
+        Consumer's remaining virtual pocket balance
     """
     username: str
     nombre: str
     email: str
     telefono: str
     posts: set[Post]
+    money: float
 
 
 @dataclass
@@ -162,13 +165,10 @@ class PDFConsumer(PDFUser):
     ----------
     metodo_de_pago: str
         Consumer's payment method
-    pocket: int
-        Consumer's remaining virtual pocket balance
     servicios_contratados: set[Offer]
         List with all Offers hired by the Consumer
     """
     metodo_de_pago: str
-    pocket: int
     servicios_contratados: set[Offer]
 
 
@@ -568,7 +568,11 @@ class PDFFile(Exportable):
         height -= 20
         self.__add_textline(Point(550, height), f'Teléfono: {content.telefono}', 'right')
 
-        height -= 42
+        # Saldo
+        height -= 20
+        self.__add_textline(Point(550, height), f'Saldo disponible: {content.money}€', 'right')
+
+        height -= 22
         self.__draw_line(Point(75, height), Point(550, height))
 
         # Habilidades
@@ -597,9 +601,12 @@ class PDFFile(Exportable):
         self.__add_textline(Point(75, height), f'Posts de {content.nombre}:', 'left')
 
         height -= 20
-        posts_names = map(lambda x: x.title, content.posts) #FIXME : Si no hay posts, salta 'TypeError'
-        posts_str = reduce(lambda x, y: x + '\n- ' + y, set(posts_names))
-        self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
+        if len(content.posts) == 0:
+            self.__add_textline(Point(75, height), 'El usuario no tiene posts creados.', 'left')
+        else:
+            posts_names = map(lambda x: x.title, content.posts)
+            posts_str = reduce(lambda x, y: x + '\n- ' + y, set(posts_names))
+            self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
 
     def __generate_consumer_profile(self, content: PDFConsumer) -> None:
         """
@@ -646,8 +653,9 @@ class PDFFile(Exportable):
         height -= 20
         self.__add_textline(Point(550, height), f'Método de pago: {content.metodo_de_pago}', 'right')
 
+        # Saldo
         height -= 20
-        self.__add_textline(Point(550, height), f'Saldo disponible: {content.pocket}€', 'right')
+        self.__add_textline(Point(550, height), f'Saldo disponible: {content.money}€', 'right')
 
         height -= 22
         self.__draw_line(Point(75, height), Point(550, height), color='rgb(113, 173, 72)')
@@ -657,9 +665,13 @@ class PDFFile(Exportable):
         self.__add_textline(Point(75, height), f'Servicios solicitados por {content.nombre}:', 'left')
 
         height -= 20
-        posts_names = map(lambda x: x.title, content.posts)
-        posts_str = reduce(lambda x, y: x + '\n- ' + y, set(posts_names))
-        height = self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
+        if len(content.posts) == 0:
+            self.__add_textline(Point(75, height), 'El usuario no tiene posts creados.', 'left')
+            height -= 20
+        else:
+            posts_names = map(lambda x: x.title, content.posts)
+            posts_str = reduce(lambda x, y: x + '\n- ' + y, set(posts_names))
+            height = self.__add_paragraph(Point(75, height), '- ' + posts_str, 100, 'left')
 
         self.__draw_line(Point(75, height), Point(550, height), color='rgb(113, 173, 72)')
 
@@ -668,10 +680,13 @@ class PDFFile(Exportable):
         self.__add_textline(Point(75, height), f'Servicios contratados por {content.nombre}:', 'left')
 
         height -= 20
-        services_str = str()
-        for post in content.servicios_contratados:
-            services_str += f'- {post.title} (Creado por: {post.user})\n'
-        self.__add_paragraph(Point(75, height), services_str, 100, 'left')
+        if len(content.servicios_contratados) == 0:
+            self.__add_textline(Point(75, height), 'El usuario no tiene servicios contratados.', 'left')
+        else:
+            services_str = str()
+            for post in content.servicios_contratados:
+                services_str += f'- {post.title} (Creado por: {post.user})\n'
+            self.__add_paragraph(Point(75, height), services_str, 100, 'left')
 
     def write(self, content: PDFContent) -> str:
         """
@@ -756,7 +771,8 @@ Sed accumsan in enim at porta. Pellentesque dolor enim, aliquam ac libero vitae,
                Offer('Title3', 'Ejdesc', 'User3')},
         habilidades=['Profesor', 'Ejemplo 2', 'Ejemplo 3'],
         opiniones=[8, 10, 7, 10],
-        rating=7.5)
+        rating=7.5,
+        money=122)
     print('PDF Generado en:')
     print(f3.write(pdf_content3))
 
@@ -771,7 +787,7 @@ Sed accumsan in enim at porta. Pellentesque dolor enim, aliquam ac libero vitae,
                Demand('Title2', 'Ejdesc', 'User2'),
                Demand('Title3', 'Ejdesc', 'User3')},
         metodo_de_pago='Paypal',
-        pocket=122,
+        money=122,
         servicios_contratados={Offer('Title1', 'Ejdesc', 'User1'),
                                Offer('Title2', 'Ejdesc', 'User2'),
                                Offer('Title3', 'Ejdesc', 'User3')})

@@ -1,7 +1,10 @@
+from typing import Self
+
 from user import User
 from offer import Offer
 from demand import Demand
-from file_utils import PDFFile, PDFFreelancer
+from file_utils import PDFFile, PDFFreelancer, XMLFile, Path, CSVFile
+
 
 class Freelancer(User):
     """
@@ -104,12 +107,28 @@ class Freelancer(User):
             posts=self.posts,
             habilidades=self.habilidades,
             opiniones=self.opiniones,
-            rating=self.rating
+            rating=self.rating,
+            money=self.money
         )
         f.write(pdf_content)
         return f.path.absolute
 
-    def contratar_demanda(self,demanda):
+    @classmethod
+    def import_user_csv(cls, path: str | Path) -> Self:
+        pass
+
+    @classmethod
+    def import_user_xml(cls, path: str | Path) -> Self:
+        f = XMLFile(path)
+        obj = cls.__new__(cls)
+        for key, value in f.read().items():
+            if key == 'type' and value != 'Freelancer':
+                raise NotImplementedError('User type is not Freelancer')
+            setattr(obj, key, value)
+
+        return obj
+
+    def contratar_demanda(self, demanda):
         """
         A Method that allows to accept a demand from an costumer
 

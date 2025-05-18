@@ -1,7 +1,9 @@
+from typing import Self
+
 from user import User
 from offer import Offer
 from demand import Demand
-from file_utils import PDFFile, PDFConsumer
+from file_utils import PDFFile, PDFConsumer, XMLFile, Path
 
 
 class Consumer(User):
@@ -83,11 +85,26 @@ class Consumer(User):
             telefono=self.telefono,
             posts=self.posts,
             metodo_de_pago=self.metodo_de_pago,
-            pocket=self.pocket,
+            money=self.money,
             servicios_contratados=self.servicios_contratados
         )
         f.write(pdf_content)
         return f.path.absolute
+
+    @classmethod
+    def import_user_csv(cls, path: str | Path) -> Self:
+        pass
+
+    @classmethod
+    def import_user_xml(cls, path: str | Path) -> Self:
+        f = XMLFile(path)
+        obj = cls.__new__(cls)
+        for key, value in f.read().items():
+            if key == 'type' and value != 'Consumer':
+                raise NotImplementedError('User type is not Consumer')
+            setattr(obj, key, value)
+
+        return obj
 
     def mostrar_info(self) -> str:
         """

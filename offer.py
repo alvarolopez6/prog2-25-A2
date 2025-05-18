@@ -1,6 +1,7 @@
 from typing import Optional, Self
 from generic_posts import Post
-from file_utils import CSVFile, Path, PDFFile, PDFOffer
+from file_utils import CSVFile, Path, PDFFile, PDFOffer, XMLFile
+
 
 class Offer(Post):
     """
@@ -38,7 +39,7 @@ class Offer(Post):
         self.price = price
 
     @classmethod
-    def import_post(cls, path: str | Path) -> Self:
+    def import_post_csv(cls, path: str | Path) -> Self:
         """
         Imports a post from a CSV file.  (Must be implemented in subclasses)
 
@@ -64,6 +65,17 @@ class Offer(Post):
             for i, value in enumerate(row):
                 if f.headers[i] != 'post_type':
                     setattr(obj, f.headers[i], value)
+
+        return obj
+
+    @classmethod
+    def import_post_xml(cls, path: str | Path) -> Self:
+        f = XMLFile(path)
+        obj = cls.__new__(cls)
+        for key, value in f.read().items():
+            if key == 'type' and value != 'Offer':
+                raise NotImplementedError('Post type is not Offer')
+            setattr(obj, key, value)
 
         return obj
 

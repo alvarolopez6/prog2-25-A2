@@ -226,7 +226,7 @@ class Post(ABC):
 
     @classmethod
     @abstractmethod
-    def import_post(cls, path: str | Path) -> Self:
+    def import_post_csv(cls, path: str | Path) -> Self:
         """
         Imports a post from a CSV file.  (Must be implemented in subclasses)
 
@@ -242,6 +242,11 @@ class Post(ABC):
         -------
         Post Instance
         """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def import_post_xml(cls, path: str | Path) -> Self:
         pass
 
     @abstractmethod
