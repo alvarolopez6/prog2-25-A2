@@ -1,6 +1,10 @@
+from typing import Self
+
 from user import User
 from offer import Offer
 from demand import Demand
+from file_utils import PDFFile, PDFFreelancer, XMLFile, Path, CSVFile
+
 from db.database import Database
 from db.sixerr import SixerrDB
 
@@ -105,14 +109,43 @@ class Freelancer(User):
 
     def mostrar_info(self) -> str:
         """
-
         Method that uses the super info from User and extend it with its own information
-
         """
         info=super().mostrar_info()
         return info + f' Habilidades: {self.habilidades} Rating: {self.rating} NºPosts: {len(self.posts)}'
 
-    def contratar_demanda(self,demanda):
+    def export_user_pdf(self, tempdir) -> str:
+        f = PDFFile(f'{tempdir}/User.pdf')
+        pdf_content = PDFFreelancer(
+            username=self.username,
+            nombre=self.nombre,
+            email=self.email,
+            telefono=self.telefono,
+            posts=self.posts,
+            habilidades=self.habilidades,
+            opiniones=self.opiniones,
+            rating=self.rating,
+            money=self.money
+        )
+        f.write(pdf_content)
+        return f.path.absolute
+
+    @classmethod
+    def import_user_csv(cls, path: str | Path) -> Self:
+        pass
+
+    @classmethod
+    def import_user_xml(cls, path: str | Path) -> Self:
+        f = XMLFile(path)
+        obj = cls.__new__(cls)
+        for key, value in f.read().items():
+            if key == 'type' and value != 'Freelancer':
+                raise NotImplementedError('User type is not Freelancer')
+            setattr(obj, key, value)
+
+        return obj
+
+    def contratar_demanda(self, demanda):
         """
         A Method that allows to accept a demand from an costumer
 

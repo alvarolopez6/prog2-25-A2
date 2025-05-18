@@ -1,7 +1,10 @@
+from typing import Self
+
 from user import User
 from offer import Offer
 from generic_posts import Post
 from demand import Demand
+from file_utils import PDFFile, PDFConsumer, XMLFile, Path
 from db.database import Database
 from db.sixerr import SixerrDB
 
@@ -83,6 +86,37 @@ class Consumer(User):
             An object from class Offer that represents offer
         """
         self.servicios_contratados.add(post)
+
+
+    def export_user_pdf(self, tempdir: str) -> str:
+        f = PDFFile(f'{tempdir}/Post.pdf')
+        pdf_content = PDFConsumer(
+            username=self.username,
+            nombre=self.nombre,
+            email=self.email,
+            telefono=self.telefono,
+            posts=self.posts,
+            metodo_de_pago=self.metodo_de_pago,
+            money=self.money,
+            servicios_contratados=self.servicios_contratados
+        )
+        f.write(pdf_content)
+        return f.path.absolute
+
+    @classmethod
+    def import_user_csv(cls, path: str | Path) -> Self:
+        pass
+
+    @classmethod
+    def import_user_xml(cls, path: str | Path) -> Self:
+        f = XMLFile(path)
+        obj = cls.__new__(cls)
+        for key, value in f.read().items():
+            if key == 'type' and value != 'Consumer':
+                raise NotImplementedError('User type is not Consumer')
+            setattr(obj, key, value)
+
+        return obj
 '''
     def mostrar_info(self) -> str:
         """

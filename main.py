@@ -134,7 +134,7 @@ if __name__ == '__main__':
         usuario=request.args.get('usuario')
         password=request.args.get('password')
         if usuario in User.usuarios.keys() and User.usuarios[usuario].password==hash_str(password):
-            return create_access_token(identity=usuario),200
+            return create_access_token(identity=usuario),200 if isinstance(User.usuarios[usuario],Consumer) else 201 if isinstance(User.usuarios[usuario],Freelancer) else 202
         else:
             return "Usuario o contraseña incorrectos",401
 

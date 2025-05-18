@@ -34,10 +34,10 @@ class Path:
         Verifies if the path refers to a file
     extension() -> str or None
         Extracts the extension of the path if it is a file
-    __add__(other: Path) -> Path
-        Returns a new Path instance joining both paths
-    change_extension(new_extension: str) -> None:
+    change_extension(new_extension: str) -> None
         Changes the file extension of the current path.
+    get_name() -> str
+        Returns the last component of the path.
     """
 
     def __init__(self, path: str) -> None:
@@ -149,3 +149,15 @@ class Path:
             new_extension = '.' + new_extension
 
         self.path = self.path.with_suffix(new_extension)
+
+    @property
+    def get_name(self) -> str:
+        """
+        Returns the last Path's component
+
+        Returns
+        -------
+        str
+            Last component of the path.
+        """
+        return self.path.name
