@@ -2,16 +2,25 @@ import crypto as cy
 from generic_posts import Post
 from file_utils import CSVFile, Path
 from datetime import datetime
-"""
-@register(
+from db.database import Database
+from db.sixerr import SixerrDB
+
+def _init(self) -> None:
+    User.usuarios[self._username]=self
+
+@Database.register(
+    db=SixerrDB(),
     table='users',
-    map={'username':'_username',
-         'name':'nombre',
-         'pwd_hash':'_password',
-         'email':'email',
-         'phone':'telefono'}
+    map={
+        'username':'_username',
+        'name':'nombre',
+        'pwd_hash':'_password',
+        'email':'email',
+        'money':'money',
+        'phone':'telefono'
+    },
+    init=_init
 )
-"""
 class User:
     """
     Main Clase to represent an User

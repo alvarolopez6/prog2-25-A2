@@ -2,8 +2,18 @@ from user import User
 from offer import Offer
 from generic_posts import Post
 from demand import Demand
+from db.database import Database
+from db.sixerr import SixerrDB
 
+def _init(self) -> None:
+    self.servicios_contratados: set[Post] = set()
 
+@Database.register(
+    db=SixerrDB(),
+    table='consumers',
+    map={'payment':'metodo_de_pago'},
+    init=_init
+)
 class Consumer(User):
     """
         Clase that represent the consumers, which they negotiate with the freelancers and buy offers, services (posts) in

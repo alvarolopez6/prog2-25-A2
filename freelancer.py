@@ -1,7 +1,22 @@
 from user import User
 from offer import Offer
 from demand import Demand
+from db.database import Database
+from db.sixerr import SixerrDB
 
+def _init(self) -> None:
+    self.demandas_contratadas: set[Demand] = set()
+
+@Database.register(
+    db=SixerrDB(),
+    table='freelancers',
+    map={
+        'rating':'rating',
+        'opinions':'opiniones',
+        'habilities':'habilidades'
+    },
+    init=_init
+)
 class Freelancer(User):
     """
         Clase that represent the freelancer, who are the users which have the abilities to offer a job in exchange of

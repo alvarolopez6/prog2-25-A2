@@ -1,4 +1,3 @@
-
 from typing import Any, Iterable
 
 class DatabaseException(Exception):
