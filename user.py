@@ -7,6 +7,11 @@ from typing import Self
 import multiprocessing as mp
 import tempfile
 import zipfile
+from generic_posts import Post
+from file_utils import CSVFile, Path
+from datetime import datetime
+from db.database import Database
+from db.sixerr import SixerrDB
 
 try:
     import zlib
@@ -15,8 +20,6 @@ except ImportError:
     compression = zipfile.ZIP_STORED
 
 modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
-from db.database import Database
-from db.sixerr import SixerrDB
 
 def _init(self) -> None:
     User.usuarios[self._username]=self
@@ -34,8 +37,7 @@ def _init(self) -> None:
     },
     init=_init
 )
-"""
-class User:
+class User(ABC):
     """
     Main Clase to represent an User
 
@@ -308,4 +310,4 @@ class User:
         Displays the complete public information about an account.
 
         """
-        return f'Usuario: {self._username} Nombre: {self.nombre} Email: {self.email} Telefono: {self.telefono}, Dinero: {self.money}'
+        return f'Usuario: {self._username} Nombre: {self.nombre} Email: {self.email} Telefono: {self.telefono}, Dinero: {self.money}'import crypto as cy
