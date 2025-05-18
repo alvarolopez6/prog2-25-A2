@@ -43,7 +43,7 @@ class Freelancer(User):
         """
 
 
-    def __init__(self, username:str, nombre:str, password:str, email:str, telefono:str=None, habilidades:list[str]=None, opiniones: list[int]=None) -> None:
+    def __init__(self, username:str, nombre:str, password:str, email:str, money:float = 0,telefono:str=None, habilidades:list[str]=None, opiniones: list[int]=None) -> None:
         """
             Initializes a Freelancer instance
 
@@ -57,6 +57,8 @@ class Freelancer(User):
                 an unique code that allows you to access to a certain account (hash system)
             email: str
                 a string which provides more information about emails of users
+            money: float
+                a float that stores user's money
             telefono: str
                 an int that represents the phone number of users
             habilidades: list[str]
@@ -65,7 +67,7 @@ class Freelancer(User):
                 a list of numbers that represent the ratings of the customers
 
         """
-        super().__init__(username, nombre, password, email, telefono)
+        super().__init__(username, nombre, password, email, money, telefono)
         self.habilidades = habilidades
         self.demandas_contratadas: set[Demand] = set()
         self.opiniones = opiniones if opiniones is not None else []

@@ -1,4 +1,5 @@
 import requests
+from time import sleep
 
 URL='http://127.0.0.1:5000'
 def main() -> None:
@@ -9,6 +10,7 @@ def main() -> None:
     token: str | None = None
 
     while op != '0':
+        sleep(2)
         print("MENU PRINCIPAL")
         print("1- Iniciar Sesion")
         print("2- Actualizar Datos")

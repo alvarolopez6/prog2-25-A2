@@ -51,7 +51,7 @@ class User:
     usuarios: dict ={}
 
 
-    def __init__(self, username: str, nombre: str, password: str, email: str, telefono: str=None) -> None:
+    def __init__(self, username: str, nombre: str, password: str, email: str, money: float = 0.0,telefono: str=None) -> None:
         """
         Initializes an User instance
 
@@ -65,6 +65,8 @@ class User:
             an unique code that allows you to access to a certain account (hash system)
         email: str
             a string which provides more information about emails of users
+        money: float
+                a float that stores user's money
         telefono: str
             an int that represents the phone number of users
         """
@@ -73,6 +75,7 @@ class User:
         self.nombre = nombre
         self._password = cy.hash_str(password) #Escritura
         self.email = email
+        self.money = money
         self.telefono = telefono
         self.posts: set[Post] = set()
         User.usuarios[username]=self
@@ -215,4 +218,4 @@ class User:
         Displays the complete public information about an account.
 
         """
-        return f'Usuario: {self._username} Nombre: {self.nombre} Email: {self.email} Telefono: {self.telefono}'
+        return f'Usuario: {self._username} Nombre: {self.nombre} Email: {self.email} Telefono: {self.telefono}, Dinero: {self.money}'

@@ -68,8 +68,8 @@ class App:
 
 if __name__ == '__main__':
     app = App()
-    Freelancer("Lancer","Lancer","Lancer","Lancer")
-    Consumer("Consum","Consum","Consum","Consum")
+    Freelancer("Lancer","Lancer","Lancer","Lancer",money=0)
+    Consumer("Consum","Consum","Consum","Consum",money=1000)
     Admin('Admin','Admin','Admin','Admin')
 
     @app.flask.route('/signup', methods=['POST'])
@@ -466,8 +466,17 @@ if __name__ == '__main__':
                 user = User.usuarios[current_user]
 
                 if isinstance(user, Consumer) and isinstance(User.usuarios[tuser], Freelancer):
-                    user.servicios_contratados.add(Post.get_post(tuser, titulo))
-                    return f'Added post {tuser}>{titulo} to user {current_user}', 200
+                    post = Post.get_post(tuser, titulo)
+                    if isinstance(post, Offer):
+                        user.servicios_contratados.add(post)
+                        if user.money >= post.price:
+                            user.money -= post.price
+                            User.usuarios[tuser].money += post.price
+                            return f'Added post {tuser}>{titulo} to user {current_user}', 200
+                        else:
+                            return 'No tienes suficiente saldo', 401
+                    else:
+                        return 'La oferta no existe', 404
                 else:
                     return 'Tienes que ser Consumer y el usuario Freelancer', 401
             else:

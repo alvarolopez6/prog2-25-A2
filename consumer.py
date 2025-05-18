@@ -38,8 +38,7 @@ class Consumer(User):
         mostrar_info()->str
             En extended version of User Mostar info method, that shows informations about an consumer
         """
-    def __init__(self, username: str, nombre: str, password: str, email: str, telefono: str= None, metodo_de_pago: str = None,
-                 pocket: int=0) -> None:
+    def __init__(self, username: str, nombre: str, password: str, email: str, money: float = 0,telefono: str= None, metodo_de_pago: str = None) -> None:
         """
             Creates an instance of Consumer
 
@@ -53,15 +52,16 @@ class Consumer(User):
                 an unique code that allows you to access to a certain account
             email: str
                 a string which provides more information about emails of users
+            money: float
+                a float that stores user's money
             telefono: int
                 an int that represents the phone number of users
             metodo_de_pago: str
                 a preference of way of paying which is set to whether the consumer wants to buy with paypal, credit card...
         """
-        super().__init__(username, nombre, password, email, telefono)
+        super().__init__(username, nombre, password, email, money, telefono)
         self.metodo_de_pago = metodo_de_pago
         self.servicios_contratados: set[Post] = set()
-        self.pocket = pocket
 
     def contratar_servicio(self,post)-> None:
         """
@@ -73,7 +73,7 @@ class Consumer(User):
             An object from class Offer that represents offer
         """
         self.servicios_contratados.add(post)
-
+'''
     def mostrar_info(self) -> str:
         """
 
@@ -81,4 +81,5 @@ class Consumer(User):
 
         """
         info=super().mostrar_info()
-        return info + f' metodo de pago: {self.metodo_de_pago} Pocket: {self.pocket}'
+        return info + f' metodo de pago: {self.metodo_de_pago}'
+'''
