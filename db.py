@@ -2,105 +2,10 @@ import sqlite3 as sql
 from os.path import abspath, isdir
 from typing import Self, Any, Type, Iterable, Iterator, Callable
 from decorators import dec_wparams, readonly, memoize
+from meta import Singleton
+from exceptions import *
 
 type Path = str | bytes | os.PathLike[str] | PathLike[bytes]
-
-class DatabaseException(Exception):
-    """
-    Database base exception class
-    """
-    def __init__(self, msg: str, *args: Any) -> None:
-        """
-        Database exception constructor
-
-        :param msg: (str) Error message to show
-        :param args: (*Any) Any other arguments
-        """
-        super().__init__(msg, *args)
-        self.msg = msg
-
-    def __str__(self) -> str:
-        """
-        Gives the string representation of the exception
-
-        :returns: (str) String representation of the exception
-        """
-        return f'Database Exception: {self.msg}'
-
-class SchemaError(DatabaseException):
-    """
-    Schema exception class
-
-    Raised when malformed schema definitions get used to create Schema instances
-    """
-    def __init__(self, e: Exception | str, *args: Any) -> None:
-        """
-        Schema exception constructor
-
-        :param e: (Exception) Error that caused the exception
-        :param args: (*Any) Any other arguments
-        """
-        super().__init__(f'Schema -> {str(e)}', *args)
-
-class PathError(DatabaseException):
-    """
-    Path exception class
-
-    Raised when there are problems with a database path
-    """
-    def __init__(self, e: Exception | str, *args: Any) -> None:
-        """
-        Path exception constructor
-
-        :param e: (Exception) Error that caused the exception
-        :param args: (*Any) Any other arguments
-        """
-        super().__init__(f'Path -> {str(e)}', *args)
-
-class ConnectionError(DatabaseException):
-    """
-    Connection exception class
-
-    Raised when there is an error when connection or disconnection from the database
-    """
-    def __init__(self, e: Exception | str, *args: Any) -> None:
-        """
-        Connection exception constructor
-
-        :param e: (Exception) Error that caused the exception
-        :param args: (*Any) Any other arguments
-        """
-        super().__init__(f'Connection -> {str(e)}', *args)
-
-class QueryError(DatabaseException):
-    """
-    Query exception class
-
-    Raised when there is an error when executing a sql query
-    """
-    def __init__(self, e: Exception | str, query: str, parameters: dict[str, Any] | Iterable, *args: Any) -> None:
-        """
-        Query exception constructor
-
-        :param e: (Exception) Error that caused the exception
-        :param args: (*Any) Any other arguments
-        """
-        super().__init__(f'Query -> |{query}| < {parameters} -> {str(e)}', *args)
-
-class SubscriptionError(DatabaseException):
-    """
-    Subscription exception class
-
-    Raised when there is an error related to object subscriptions
-    """
-    def __init__(self, e: Exception | str, *args: Any) -> None:
-        """
-        Subscription exception constructor
-
-        :param e: (Exception) Error that caused the exception
-        :param args: (*Any) Any other arguments
-        """
-        super().__init__(f'Subscription -> {str(e)}', *args)
 
 @readonly(attrs={'__tables'})
 class Schema:
@@ -1037,24 +942,6 @@ class Database:
         # Return class
         return cls
 
-class Singleton[C: object](type):
-    """
-    Singleton metaclass
-
-    Enforces the singleton pattern on a class.
-    """
-    __instances: dict[Self, C] = {}
-
-    def __call__[**P](cls, *args: P.args, **kwargs: P.kwargs) -> C:
-        """
-        Construct a class object following the singleton pattern
-
-        Constructs an object or returns one if it was already made before.
-        """
-        if not (cls in cls.__instances):
-            cls.__instances[cls] = super().__call__(*args, **kwargs)
-        return cls.__instances[cls]
-
 class SixerrDB(Database, metaclass=Singleton):
     """
     Manages the Sixerr SQL database and its schema as a Singleton
@@ -1074,6 +961,7 @@ class SixerrDB(Database, metaclass=Singleton):
                         {'name': 'name', 'type': 'TEXT', 'mods': ('NOT NULL',)},
                         {'name': 'pwd_hash', 'type': 'TEXT', 'mods': ('NOT NULL',)},
                         {'name': 'email', 'type': 'TEXT', 'mods': ('UNIQUE', 'NOT NULL')},
+                        {'name': 'money', 'type': 'INTEGER'},
                         {'name': 'phone', 'type': 'TEXT'},
                         {'name': 'image', 'type': 'BLOB'},
                     )
@@ -1148,42 +1036,6 @@ class SixerrDB(Database, metaclass=Singleton):
             )
         )
 
-def main():
-
-    @readonly(attrs={'__name'})
-    @Database.gregister(
-        table='freelancers'
-    )
-    class Freelancer(User):
-        def __init__(self, name:str, pwd: str):
-            super().__init__(name, pwd)
-            self.nombre_freelancer = nombre_freelancer
-
-    db = Database('Sixerrr', schema)
-    u1 = User('pepe', '1234')
-
-
-    db.store(u1)
-
-
-    for user in db.retrieve(User):
-        User.usuarios[user.username] = user
-    return
-
-    db = SixerrDB(schema)
-    if not db.init():
-        print('Something went wrong')
-    print(db.is_init)
-    #db.schema.drop(db)
-    print(db.is_init)
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
-    main()
+    db = SixerrDB()
+    db.sinit()
