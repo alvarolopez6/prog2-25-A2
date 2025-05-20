@@ -1,7 +1,7 @@
-import socket        #permite la comunicacion server-user en red,facilita el envio de mensajes
+import socket        #permite la comunicacion server-user en red,facilita el envio de mensajes, utiliza TCP
 import threading     #permite realizar otros subprogramas independientemente sin bloquear al principal
-import json
-import os
+import json          #convertir datos en archivos json
+import os            #validar existencia de archivos
 
 '''
 The Server contains the code parts that manage the basic interface that the program shows, the data
@@ -11,7 +11,7 @@ For more clarity I suggest to read the coment all over the code.
 Authors:Oussama Samrani El Feouaki
 '''
 
-#la clase hereda de threading.Thread lo que le deja sobre escribir el metodo run
+#la clase hereda de threading.Thread lo que le deja sobre escribir el metodo run, lo que permite la ejecucion en un hilo independiente
 class ClientHandler(threading.Thread):
     def __init__(self, server, client_socket):
         super().__init__()
@@ -123,9 +123,9 @@ class ChatServer:
         enviar mensajes sin que se pierden '''
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connections = {}  #se anaden los usuarios conectados de froma {'username': socket,...}
-        '''python no puede ejecutar varios programas a la vez, a parte de crear hilos que son sub programas
+        '''python no puede ejecutar varios programas a la vez, a parte de crear hilos que son subprogramas
         independientes, tambien se pueden causar problemas si los hilos trabajan con los mismos archivos
-        el Lock() nos permite bloquear el acceso hasta que se termine la ejecucion del hilo 
+        el Lock() nos permite bloquear el acceso hasta que termine la ejecucion del hilo 
         '''
         self.lock = threading.Lock()
         self.users_file = "usuarios.txt" #el file que contiendra los nombres de los usuarios
