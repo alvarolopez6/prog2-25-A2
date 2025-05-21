@@ -1,10 +1,10 @@
-import socket        #permite la comunicacion server-user en red,facilita el envio de mensajes
+import socket        #permite la comunicacion server-user en red,facilita el envio de datos, utiliza TCP
 import threading     #permite realizar otros subprogramas independientemente sin bloquear al principal
-import os
+import os            #validar la existencia de archivos
 '''
 The USER1/2 contains the code parts that manages data received (server-client) (receive_mesages()), 
 the sent data (client-server) (run()) and also some parts of the code that manages the connection 
-server client (__innit__()). For more clarity I suggest to read the coment all over the code.
+server client (__innit__()). For more clarity I suggest to read the coments all over the code.
 
 Authors:Oussama Samrani El Fetouaki   
 '''
@@ -19,7 +19,7 @@ class Client:
         self.client_socket.connect((host, port)) #conecta el cliente al servidor con el host y el puerto
         print("Conectado al servidor. Escribe /quit para salir del programa.")
 
-        #hilo para recibir mensajes, se ejecuta en un hilo porque el metodo receive_messages() toma mucho tiempo
+        #hilo para recibir mensajes, se ejecuta en un hilo porque el metodo receive_messages() es un bucle infinto
         threading.Thread(target=self.receive_messages, daemon=True).start()
 
         #llama al metodo run iniciando el bucle principal, ahora el cliente ya puede recibir y enviar mensajes

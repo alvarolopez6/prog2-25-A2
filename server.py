@@ -1,4 +1,4 @@
-import socket        #permite la comunicacion server-user en red,facilita el envio de mensajes, utiliza TCP
+import socket        #permite la comunicacion server-user en red,facilita el envio de datos, utiliza TCP
 import threading     #permite realizar otros subprogramas independientemente sin bloquear al principal
 import json          #convertir datos en archivos json
 import os            #validar existencia de archivos
@@ -6,7 +6,7 @@ import os            #validar existencia de archivos
 '''
 The Server contains the code parts that manage the basic interface that the program shows, the data
 coming from the user, also manage the connection server-user and user-user.
-For more clarity I suggest to read the coment all over the code.
+For more clarity I suggest to read the coments all over the code.
 
 Authors:Oussama Samrani El Feouaki
 '''
