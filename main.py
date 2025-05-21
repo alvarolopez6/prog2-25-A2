@@ -577,6 +577,40 @@ if __name__ == '__main__':
             return f'{e}', 401
 
 
+    @app.flask.route('/admin/post', methods=['DELETE'])
+    @jwt_required()
+    def admin_delete_post() -> tuple[str, int]:
+        """
+        Permite a un administrador eliminar un post específico de cualquier usuario.
+
+        Returns
+        -------
+        Tuple[str, int]
+            - 200: Post eliminado con éxito
+            - 401: Permiso denegado (no es admin)
+            - 404: Usuario o post no encontrado
+        """
+        current_user = get_jwt_identity()
+        current_account = User.usuarios.get(current_user)
+
+        user_target = request.args.get('user')
+        titulo = request.args.get('titulo')
+
+        try:
+            if not isinstance(current_account, Admin):
+                raise RestrictionPermission(type(current_account).__name__)
+            if user_target not in User.usuarios:
+                return f'No existe el usuario {user_target} en nuestra base de datos', 404
+            if not Post.get_post(user_target,titulo):
+                return f'El usuario {user_target} no tiene la publicación {titulo}', 404
+            else:
+                Admin.delete_post(user_target,titulo)
+                return f'Se eliminó el post "{titulo}" de {user_target}', 200
+
+        except RestrictionPermission as e:
+            return str(e), 401
+
+
     @app.flask.route('/usuario/hire', methods=['DELETE'])
     @jwt_required()
     def cancelar_offer() -> tuple[str, int]:

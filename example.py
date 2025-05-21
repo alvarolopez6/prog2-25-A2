@@ -183,6 +183,13 @@ def main() -> None:
         print(r.status_code)
         print(r.text)
 
+    def forzar_borrar_post():
+        # Borrar una cuenta
+        r = requests.delete(f'{URL}/admin?user={input("INTRODUZCA EL USUARIO DEL QUE QUIERES BORRAR LA PUBLICACIÓN: ")}?post={input('INTRODUCE EL TÍTULO DEL POST A BORRAR: ')}',
+                            headers={'Authorization': 'Bearer ' + token if token else ''})
+        print(r.status_code)
+        print(r.text)
+
     def cancelar_un_contrato():
         # Cancelar Un Contrato
         r = requests.delete(
@@ -322,7 +329,7 @@ def main() -> None:
                             print("POR FAVOR INTRODUCE UNA OPCION CORRECTA")
 
                 while token is not None and status_code == 202:
-                    print("**********HAS INICIADO SESSION COMO FREELANCER**********")
+                    print("**********HAS INICIADO SESSION COMO ADMIN*********")
                     print("1- Actualizar Datos")
                     print("2- Mostrar Datos de la sesion actual")
                     print("3- Borrar la cuenta Actual")
@@ -330,37 +337,32 @@ def main() -> None:
                     print("5- Ver todos los posts publicados")
                     print("6- Exportar perfil actual a CSV")
                     print("7- Exportar post a CSV")
-                    print("8- Forza Borrar Una Cuenta (Admin)")
-                    print("9- Cerrar Session")
-                    opladmin = input("POR FAVOR ELIGE LA OPCION ")
+                    print("8- Forza borrado de una cuenta")
+                    print("9- Forza borrado de una publicación")
+                    print("10- Cerrar sesión")
+                    opladmin = input("POR FAVOR ELIGE LA OPCION: ")
                     match opladmin:
                         case "1":
-                            # 1: Actualizar Datos
                             actualizar_datos()
                         case "2":
-                            # 2: Mostrar datos del usuario
                             mostrar_datos_usuario()
                         case "3":
-                            # 3: Borrar la cuenta actual
                             borrar_cuenta_actual()
                             token = None
                         case "4":
-                            # 4: Cambiar contraseña
                             cambiar_password()
                         case "5":
-                            # 5: Ver Todos los Posts
                             mostrar_todos_posts()
                         case "6":
-                            # 6: Exportar Perfil Csv
                             exportar_perfil_csv()
                         case "7":
-                            # 7: Exportar Post Csv
                             exportar_post_csv()
                         case "8":
-                            # 8: Forzar Borrar una cuenta
                             forza_quitar_cuenta()
-                        case "9":
-                            # 12: Cerrar sesión
+                        case '9':
+                            forzar_borrar_post()
+                        case "10":
+                            #Cerrar sesión
                             cerrar_session()
                             token = None
                             break

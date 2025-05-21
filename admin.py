@@ -60,9 +60,10 @@ class Admin(User):
             String with the username to be deleted
         """
         User.usuarios.pop(username)
+        Post.posts.pop(username,None)
 
     @staticmethod
-    def delete_post(post_name: str) -> None:
+    def delete_post(post_autor: str,post_name: str) -> None:
         """
         Deletes a post by their name
 
@@ -71,6 +72,4 @@ class Admin(User):
         post_name: str
             String with the name of the post to be deleted
         """
-        for post in Post.post_set:
-            if post.title == post_name:
-                del post
+        Post.posts[post_autor].discard(post_name)
