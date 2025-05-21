@@ -46,6 +46,7 @@ def show_auto_feed(posts):
 
     index = 0
     while not stop_feed[0]:
+        print()
         print(posts[index].display_information())
 
         # 3 second timer between posts
@@ -57,7 +58,7 @@ def show_auto_feed(posts):
 
         index += 1
         if index >= len(posts):
-            index = 0
+           index = 0
 
     keyboard_thread.join() # wait for thread to end
     print("\n🚀 Feed stopped by user!")
@@ -122,7 +123,7 @@ if __name__ == '__main__':
     # Select category of post
     while True:
         category = input(
-            "Choose category to filter: ex. 'science', 'economics'...: ").strip().lower().capitalize()
+            "Choose category to filter: ex. 'science', 'economics', etc.: ").strip().lower().capitalize()
         if category == '':
             category = None
             break
@@ -134,11 +135,11 @@ if __name__ == '__main__':
     # Enter keywords for search
     while True:
         keywords = input(
-            "Choose keywords to search for: try something like 'english teacher' or 'logo design'")
+            "Choose keywords to search for: try something like 'english teacher' or 'logo design':")
         if keywords == '':
             keywords = None
         elif all(c.isalnum() or c.isspace() for c in keywords):
-            keywords = keywords.split().lower()
+            keywords = [word.lower() for word in keywords.split()]
         else:
             print("To apply a keyword filter only numbers, letters and spaces are allowed. To neglect this filter press enter")
         break
