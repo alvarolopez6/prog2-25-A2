@@ -1,14 +1,17 @@
 from typing import Self
 
-from user import User
-from offer import Offer
-from demand import Demand
-from file_utils import PDFFile, PDFFreelancer, XMLFile, Path, CSVFile
+from .user import User
+from post.demand import Demand
+from file_utils import PDFFile, PDFFreelancer, XMLFile, Path
 
-from db.database import Database
-from db.sixerr import SixerrDB
+from db import SixerrDB, Database
 
-def _init(self) -> None:
+def _init(self, _) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
     self.demandas_contratadas: set[Demand] = set()
 
 @Database.register(
@@ -17,7 +20,7 @@ def _init(self) -> None:
     map={
         'rating':'rating',
         'opinions':'opiniones',
-        'habilities':'habilidades'
+        'abilities':'habilidades'
     },
     init=_init
 )
@@ -112,7 +115,7 @@ class Freelancer(User):
         Method that uses the super info from User and extend it with its own information
         """
         info=super().mostrar_info()
-        return info + f' Habilidades: {self.habilidades} Rating: {self.rating} NºPosts: {len(self.posts)}'
+        return info + f'\nHabilidades: {self.habilidades}\nRating: {self.rating}\nNºPosts: {len(self.posts)}{f'\nOpiniones:{self.opiniones}' if self.opiniones else ''}'
 
     def export_user_pdf(self, tempdir) -> str:
         f = PDFFile(f'{tempdir}/User.pdf')

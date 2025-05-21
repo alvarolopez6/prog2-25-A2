@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 import ast
 
 
+
 type_to_str = {
     type(None): 'None',
     int: 'int',
@@ -250,8 +251,8 @@ class XMLFile(Exportable, Importable):
 
 # Tests
 if __name__ == '__main__':
-    from demand import Demand
-    from offer import Offer
+    from post.demand import Demand
+    from post.offer import Offer
 
     # XML for Users
     f = XMLFile('../data/XMLTest.xml')

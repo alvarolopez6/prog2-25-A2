@@ -17,7 +17,7 @@
 from typing import Any, Callable, Concatenate
 from functools import wraps, update_wrapper
 from time import perf_counter as clock
-from cache import LRUCache
+from .cache import LRUCache
 # <=====================================================================================>
 #  TYPES
 # <=====================================================================================>

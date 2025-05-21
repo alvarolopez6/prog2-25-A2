@@ -1,6 +1,52 @@
 import sqlite3 as sql
+from os import PathLike
 from os.path import abspath, isdir
-from decorators import dec_wparams, readonly, memoize
+from tkinter.constants import SEPARATOR
+from typing import Self, Type, Callable, Iterator
+from utils.decorators import dec_wparams, readonly, memoize
+from .schema import Schema
+from .exceptions import *
+import builtins
+
+class Adapters:
+    SEPARATOR = '¨'
+    SUBSEPARATOR = '¬'
+
+    @staticmethod
+    def from_tuple(o: list) -> str:
+        return Adapters.from_list(o)
+
+    @staticmethod
+    def from_list(o: list) -> str:
+        ss = []
+        for item in o:
+            ss.append(type(item).__name__ + Adapters.SUBSEPARATOR + str(item))
+        return SEPARATOR.join(ss)
+
+    @staticmethod
+    def to_list(s: bytes) -> list:
+        o = []
+        oo = s.decode().split(SEPARATOR)
+        for item in oo:
+            t, v = item.split(Adapters.SUBSEPARATOR)
+            try:
+                o.append(getattr(builtins, t)(v))
+            except (AttributeError, ValueError, TypeError) as e:
+                raise ValueError(f"Cannot create instance of type '{t}' with value '{v}': {e}")
+        return o
+
+    @staticmethod
+    def to_tuple(s: bytes) -> tuple:
+        return tuple(Adapters.to_list(s))
+
+# Register the adapter and converter
+sql.register_adapter(list, Adapters.from_list)
+sql.register_converter("LIST", Adapters.to_list)
+
+sql.register_adapter(tuple, Adapters.from_tuple)
+sql.register_converter("TUPLE", Adapters.to_tuple)
+
+type Path = str | bytes | PathLike[str] | PathLike[bytes]
 
 @readonly(attrs={'__id', '__schema', '__path', '__uri'})
 class Database:
@@ -175,7 +221,7 @@ class Database:
         """
         try:
             if not self.__connection:
-                self.__connection = sql.connect(self.__id if self.__uri else f'{self.__path}/{self.__id}.db', uri=self.__uri, autocommit=False)
+                self.__connection = sql.connect(self.__id if self.__uri else f'{self.__path}/{self.__id}.db', uri=self.__uri, detect_types=sql.PARSE_DECLTYPES, autocommit=False)
                 self.__connection.row_factory = sql.Row # Use row objects for rows instead of tuples
         except sql.Error as e:
             raise ConnectionError(f'On DB open, {e}')
@@ -204,7 +250,7 @@ class Database:
         The connection to the database file must already be opened.
 
         :param query: (str) SQL Query string
-        :param parametes: (dict[str, Any] | Iterable) Parameters to be substituted in the query string, if any
+        :param parameters: (dict[str, Any] | Iterable) Parameters to be substituted in the query string, if any
         :returns: (sql.Cursor | None) Cursor object representing query used to manage the context of a fetch operation
         :raises ConnectionError: When trying to query the database without a connection to the database file
         :raises QueryError: When there is a problem with the query and it fails
@@ -315,7 +361,7 @@ class Database:
                 # Get table's erefs
                 erefs = self.__schema.get_erefs(self.__schema, mt['__table__'])
                 # Get query target
-                etarget = self.__get_target(self, mt['__table__'], allow=tuple(cdata.keys()), ext=True)
+                etarget = self.__get_target(self, mt['__table__'], allow=(cdata.keys(), ''), ext=True)
                 # Create and execute select statement
                 cs = self.query(f'SELECT {','.join((*mt['__map__'].keys(), *{eref[0] for eref in erefs}, *(((mt['__table__'] in table_erows) and table_erows[mt['__table__']]) or ())))} FROM {mt['__table__']} \
                     {f'WHERE {etarget}' if etarget else ''};', cdata)
@@ -350,6 +396,7 @@ class Database:
                 for row in rows:
                     # Get row set
                     if (rset := _ematch(erefs, row)):
+                        print(type(cls), '---------', cls)
                         # Create new object instance
                         obj = cls.__new__(cls)
                         # Loop trough rset rows
@@ -360,9 +407,13 @@ class Database:
                                 if column in fmap:
                                     # Set new object instance's attribute
                                     obj.__dict__[fmap[column]] = _row[column] # Bypass __setattr__
-                        # If init function defined call it
-                        if callable(mt['__init__']):
-                            mt['__init__'](obj)
+                        for cl in cls.__mro__[::-1]:
+                            # If class subscribed
+                            if (cl in type(self).subscribed) and getattr(cl, '__db__', None):
+                                init = cl.__db__['__init__']
+                                # If init function defined call it
+                                if callable(init):
+                                    init(obj, self)
                         # Yield object instance
                         yield obj
             break # Loop only until lowest level

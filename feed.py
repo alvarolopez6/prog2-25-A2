@@ -1,7 +1,13 @@
 import time
 import threading
-from generic_posts import Post
-from buscador import filter_posts
+from typing import Any
+
+allowed_categories = {
+        "Mathematics", "Science", "Physics", "Chemistry", "Biology",
+        "History", "Geography", "Literature", "Art", "Music",
+        "Technology", "Computer Science", "Programming", "Robotics", "Astronomy",
+        "Sports", "Health", "Philosophy", "Psychology", "Economics"
+    }
 
 # Custom exceptions
 class InvalidPostTypeError(Exception):
@@ -31,9 +37,42 @@ class InvalidPostDataError(Exception):
     def __str__(self):
         return f"Post with ID {self.post_id} contains invalid or incomplete data."
 
+def display_information(info: tuple[str, dict[str, Any]]) -> str:
+    return (f"Titulo:{info[0]}\nDescripción:{info[1]['description']}\nCreado por: {info[1]['user']}\n" +
+            (f"Urgencia: {info[1]['urgency']}" if info[1]['type'] == 'demand'
+            else f"Precio: {info[1]['price']}€"))
+
+def filter_posts(post_type=None, category=None, keywords=None, post_dict: dict[str, dict[str, Any]]=None):
+    # Validar que post_dict es un diccionario
+    if not isinstance(post_dict, dict):
+        raise TypeError("Post.posts must be a dictionary.")
+
+    if post_type == "offer":
+        filtered = [(title, info)
+                    for title, info in post_dict.items() if post_dict[title]['type'] == 'offer']
+    elif post_type == "demand":
+        filtered = [(title, info)
+                    for title, info in post_dict.items() if post_dict[title]['type'] == 'demand']
+    else:
+        filtered = [(title, info) for title, info in post_dict.items()]
+
+    if category:
+        filtered = [(title, info) for title, info in filtered if info['category'] == category]
+
+    if keywords:
+        try:
+            filtered = [(title, info) for title, info in filtered if any(
+                kw.lower() in title.lower() or kw.lower() in info['description'].lower()
+                for kw in keywords
+            )]
+        except AttributeError as e:
+            print(f"Warning: a post was skipped due to missing attributes - {e}")
+
+    return filtered
+
 def listen_keyboard(stop_feed):
     try:
-        input("Press Enter anytime to stop the auto feed...")
+        input("Press Enter anytime to stop the auto feed...\n")
         stop_feed[0] = True
     except Exception:
         print("There was a problem reading your input. The feed will continue.")
@@ -49,11 +88,7 @@ def show_auto_feed(posts):
 
     index = 0
     while not stop_feed[0]:
-        try:
-            print(posts[index].display_information())
-        except Exception:
-            print(InvalidPostDataError(post_id=posts[index].id))
-
+        print(display_information(posts[index]))
         for _ in range(3):
             if stop_feed[0]:
                 keyboard_thread.join()
@@ -74,12 +109,7 @@ def show_manual_feed(posts):
 
     index = 0
     while True:
-        for i in range(index, index + 5):
-            if 0 <= i < len(posts):
-                try:
-                    print(posts[i].display_information())
-                except Exception:
-                    print(InvalidPostDataError(post_id=posts[i].id))
+        print(display_information(posts[index]))
 
         option = input("Press Enter to move forward | 'b' to go back | 'q' to exit: ").strip().lower()
 
@@ -87,31 +117,38 @@ def show_manual_feed(posts):
             print("\nFeed closed.")
             break
         elif option == "b":
-            if index >= 5:
-                index -= 5
+            if index > 0:
+                index -= 1
             else:
                 print("No previous posts.")
         else:
-            if index + 5 < len(posts):
-                index += 5
+            if index < len(posts) - 1:
+                index += 1
             else:
                 print("No more posts. Looping back to the start.")
                 index = 0
 
-if __name__ == '__main__':
-    print('Posts can be filtered by type(offer/demand), category and keywords. These filters are applied independently. To neglect any filter press enter.')
-    print('----------------------------')
+def feed(post_dict):
+    print(
+        'Posts can be filtered by type(offer/demand), category and keywords. These filters are applied independently. '
+        'To neglect any filter press enter.')
+    print('-' * 75)
 
-    while True:
+    closefeed = False
+    while not closefeed:
         while True:
             try:
+                print("Type: 'c' to close feed")
                 post_type = input(
-                    "Choose post type to filer: 'offer' for Offers, 'demand' for Demands, 'all' for everything: ").strip().lower()
+                    "Choose post type to filer: 'offer' for Offers, 'demand' for Demands: ").strip().lower()
 
                 if post_type == '':
                     post_type = 'all'
                     break
-                elif post_type in ('offer','demand','all'):
+                elif post_type in ('offer', 'demand', 'all'):
+                    break
+                elif post_type == 'c':
+                    closefeed = True
                     break
                 else:
                     raise InvalidPostTypeError()
@@ -122,6 +159,9 @@ if __name__ == '__main__':
             except InvalidPostTypeError as e:
                 print(e)
                 continue
+        if closefeed:
+            print("Closing feed...\n")
+            break
 
         while True:
             try:
@@ -131,7 +171,7 @@ if __name__ == '__main__':
                 if category == '':
                     category = None
                     break
-                elif category in Post.allowed_categories:
+                elif category in allowed_categories:
                     break
                 else:
                     raise InvalidCategoryError()
@@ -164,7 +204,7 @@ if __name__ == '__main__':
                 continue
 
         try:
-            filtered_posts = filter_posts(post_type, category, keywords)
+            filtered_posts = filter_posts(post_type, category, keywords, post_dict)
             if not filtered_posts:
                 raise NoMatchingPostsError()
         except NoMatchingPostsError as e:
@@ -173,7 +213,8 @@ if __name__ == '__main__':
 
         while True:
             try:
-                print('There are 2 modes to see feed, automatic and manual. Automatic will display new posts every few seconds. Manual allows user to navigate freely through posts.')
+                print(
+                    'There are 2 modes to see feed, automatic and manual. Automatic will display new posts every few seconds. Manual allows user to navigate freely through posts.')
                 mode = input("Choose feed mode: 'auto' for automatic, 'manual' for manual: ").strip().lower()
 
                 if mode == "auto":
@@ -192,4 +233,9 @@ if __name__ == '__main__':
                 print(e)
                 continue
 
-        break
+if __name__ == '__main__':
+    diccionario = {'Titulo1': {'type': 'offer', 'description': 'descripcionejemplo', 'user': 'younes', 'price': 15.99},
+                   'Titulo2': {'type': 'demand', 'description': 'descripcion22ejemplo', 'user': 'llunes', 'urgency': 5},
+                   'Titulo3': {'type': 'offer', 'description': 'descripcion333ejemplo', 'user': 'younes', 'price': 15.99},
+                   'Titulo4': {'type': 'offer', 'description': 'descripcion4444ejemplo', 'user': 'younes', 'price': 15.99}}
+    feed(diccionario)

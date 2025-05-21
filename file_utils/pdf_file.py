@@ -23,9 +23,9 @@ from reportlab.lib.utils import ImageReader
 from file_utils import Path, Exportable
 
 if TYPE_CHECKING:
-    from generic_posts import Post
-    from demand import Demand
-    from offer import Offer
+    from post.generic_posts import Post
+    from post.demand import Demand
+    from post.offer import Offer
 
 class AlignmentError(Exception):
     """
@@ -190,7 +190,7 @@ class PDFFile(Exportable):
     height: float
         Height of the PDF canvas
     sixerr_logo: Path
-        System path to 'sixerr_logo.png'
+        (Class attribute), System path to 'sixerr_logo.png'
     FONT: str
         (Class attribute), Typing font to be used
     FONT_SIZE: int
@@ -578,8 +578,12 @@ class PDFFile(Exportable):
         # Habilidades
         type(self).change_font(new_font_size=14)
         height -= 20
-        habilidades_str = reduce(lambda x, y: x + ', ' + y, content.habilidades)
-        height = self.__add_paragraph(Point(75, height), f'Habilidades: {habilidades_str}', 90, 'left')
+        if type(content.habilidades) == type(None):
+            self.__add_textline(Point(75, height), f'Habilidades: No hay habilidades indicadas actualmente', 'left')
+            height -= 20
+        else:
+            habilidades_str = reduce(lambda x, y: x + ', ' + y, content.habilidades)
+            height = self.__add_paragraph(Point(75, height), f'Habilidades: {habilidades_str}', 90, 'left')
 
         # Reseñas
         height -= 20
@@ -725,8 +729,8 @@ class PDFFile(Exportable):
 
 # Tests
 if __name__ == '__main__':
-    from demand import Demand
-    from offer import Offer
+    from post.demand import Demand
+    from post.offer import Offer
     # Lorem ipsum de ejemplo
     data_text = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
 Etiam fermentum tellus sed turpis auctor tempus. Nam massa arcu, feugiat quis dictum sit amet, sollicitudin ut lorem. 

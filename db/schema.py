@@ -1,4 +1,6 @@
-from decorators import readonly, memoize
+from typing import Self
+from utils.decorators import readonly, memoize
+from .exceptions import *
 
 @readonly(attrs={'__tables'})
 class Schema:
@@ -331,7 +333,7 @@ class Schema:
             query.append(', ')
         # End of definition (overwrites last comma)
         pkeys[-1] = ')'
-        query[-1] = f', {''.join(pkeys)}) STRICT;'
+        query[-1] = f', {''.join(pkeys)});'
         return ''.join(query)
 
     @staticmethod

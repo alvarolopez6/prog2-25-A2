@@ -1,14 +1,17 @@
 from typing import Self
 
-from user import User
-from offer import Offer
-from generic_posts import Post
-from demand import Demand
+from .user import User
+from post.offer import Offer
+from post.generic_posts import Post
 from file_utils import PDFFile, PDFConsumer, XMLFile, Path
-from db.database import Database
-from db.sixerr import SixerrDB
+from db import SixerrDB, Database
 
-def _init(self) -> None:
+def _init(self, _) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
     self.servicios_contratados: set[Post] = set()
 
 @Database.register(
@@ -38,8 +41,8 @@ class Consumer(User):
             a preference of way of paying which is set to whether the consumer wants to buy with paypal, credit card...
         servicios_contratados: set[Offer]
             a list that contains the services bought, the services will be added through the contratar_servicios method
-        pocket: int
-            an int that represent the virtual pocket of an consumer (default 0)
+        money: float
+            an float that represent the virtual pocket of an consumer (default 0)
 
 
         Methods

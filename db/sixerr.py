@@ -1,4 +1,4 @@
-from meta import Singleton
+from utils.meta import Singleton
 from .database import Database
 from .schema import Schema
 
@@ -40,9 +40,9 @@ class SixerrDB(Database, metaclass=Singleton):
                     'name': 'freelancers',
                     'columns': (
                         {'name': 'id', 'type': 'INTEGER', 'mods': ('PRIMARY KEY', 'REFERENCES users(id)')},
-                        {'name': 'rating', 'type': 'INTEGER'},
-                        {'name': 'opinions', 'type': 'TEXT'},
-                        {'name': 'habilities', 'type': 'TEXT'},
+                        {'name': 'rating', 'type': 'REAL'},
+                        {'name': 'opinions', 'type': 'LIST'},
+                        {'name': 'abilities', 'type': 'TEXT'},
                     ),
                     'indexes': (
                         {'name': 'freelancer_id', 'unique': True, 'columns': ('id',)},

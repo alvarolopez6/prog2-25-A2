@@ -76,7 +76,7 @@ class Post(ABC):
         "Technology", "Computer Science", "Programming", "Robotics", "Astronomy",
         "Sports", "Health", "Philosophy", "Psychology", "Economics"
     }
-    posts: dict[str, set] = {}
+    posts: dict[str, set[Self]] = {}
 
     def __init__(self, title: str, description: str, user: str, image: Optional[str] = None) -> None:
         """
@@ -222,28 +222,6 @@ class Post(ABC):
 
         return zip_file.absolute
 
-
-
-    @classmethod
-    @abstractmethod
-    def import_post_csv(cls, path: str | Path) -> Self:
-        """
-        Imports a post from a CSV file.  (Must be implemented in subclasses)
-
-        To avoid unwanted behaviours CSV headers must be: (¡post_type must be last column!)
-        title,description,user,image,publication_date,category,price/demand,post_type
-
-        Parameters
-        ----------
-        path: str | Path
-            Path to the CSV file.
-
-        Returns
-        -------
-        Post Instance
-        """
-        pass
-
     @classmethod
     @abstractmethod
     def import_post_xml(cls, path: str | Path) -> Self:
@@ -259,7 +237,9 @@ class Post(ABC):
         str
             Detailed information about the publication.
         """
-        return f'Title: {self.title}, Description: {self.description}, Publication date: {self.publication_date}, User: {self.user}, Category: {self.category if self.category is not None else "No category"}'
+        return (f'Title: {self.title}\nDescription: {self.description}'
+                f'\nPublication date: {self.publication_date}\nUser: {self.user}'
+                f'\nCategory: {self.category if self.category else "No category"}')
 
     @classmethod
     def get_post(cls, user: str, title: str) -> Self | None:

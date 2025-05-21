@@ -21,6 +21,7 @@ class NoHeadersFound(Exception):
     def __str__(self) -> str:
         return 'Headers are not defined in CSV file. Use write_headers() to define them.'
 
+
 class NotEnoughColumns(Exception):
     """
     Exception raised when there is more data than headers when writing to a CSV file
@@ -32,6 +33,7 @@ class NotEnoughColumns(Exception):
 
     def __str__(self) -> str:
         return f'Introduced {self.num_data} elements but CSV File has {self.num_col} columns'
+
 
 class CSVFile(Exportable, Importable):
     """
@@ -54,7 +56,7 @@ class CSVFile(Exportable, Importable):
         Writes a single row into a CSV file (headers must exist)
     write_rows(rows: Sequence[Sequence[str]]) -> None
         Writes multiple rows into a CSV file (headers must exist)
-    read -> None
+    read() -> bool
         Reads the CSV file if it exists
     clear() -> None
         Clears all the CSV file data, also resets 'data' and 'headers' attributes
@@ -142,9 +144,14 @@ class CSVFile(Exportable, Importable):
                         row_dict[self.headers[i]] = None
                 writer.writerow(row_dict)
 
-    def read(self) -> None:
+    def read(self) -> bool:
         """
         Reads the CSV file if it exists, it appends CSV's data into 'self.data'
+
+        Returns
+        -------
+        bool
+            Returns True if the CSV file exists, False otherwise
         """
         self.data = []
         if self.path.exists:
@@ -156,7 +163,10 @@ class CSVFile(Exportable, Importable):
                         self.headers = row
                         cont += 1
                     else:
-                        self.data.append(row)
+                        self.data = row
+                else:
+                    return True
+        return False
 
     def clear(self) -> None:
         """

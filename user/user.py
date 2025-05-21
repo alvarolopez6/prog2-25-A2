@@ -1,17 +1,13 @@
-import crypto as cy
-from generic_posts import Post
-from file_utils import CSVFile, Path, XMLFile
-from datetime import datetime
+from utils import crypto as cy
 from abc import ABC, abstractmethod
 from typing import Self
 import multiprocessing as mp
 import tempfile
 import zipfile
-from generic_posts import Post
-from file_utils import CSVFile, Path
+from post.generic_posts import Post
+from file_utils import CSVFile, Path, XMLFile
 from datetime import datetime
-from db.database import Database
-from db.sixerr import SixerrDB
+from db import SixerrDB, Database
 
 try:
     import zlib
@@ -21,19 +17,25 @@ except ImportError:
 
 modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
 
-def _init(self) -> None:
-    User.usuarios[self._username]=self
+def _init(self, _) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
+    User.usuarios[self._username] = self
+    self.__dict__['posts']: set[Post] = set()
 
 @Database.register(
     db=SixerrDB(),
     table='users',
     map={
-        'username':'_username',
-        'name':'nombre',
-        'pwd_hash':'_password',
-        'email':'email',
-        'money':'money',
-        'phone':'telefono'
+        'username': '_username',
+        'name': 'nombre',
+        'pwd_hash': '_password',
+        'email': 'email',
+        'money': 'money',
+        'phone': 'telefono'
     },
     init=_init
 )
@@ -75,8 +77,7 @@ class User(ABC):
     """
     usuarios: dict ={}
 
-
-    def __init__(self, username: str, nombre: str, password: str, email: str, money: float = 0.0,telefono: str=None) -> None:
+    def __init__(self, username: str, nombre: str, password: str, email: str, money: float = 0.0, telefono: str=None) -> None:
         """
         Initializes an User instance
 
@@ -104,6 +105,10 @@ class User(ABC):
         self.telefono = telefono
         self.posts: set[Post] = set()
         User.usuarios[username]=self
+
+    def __str__(self) -> str:
+        return self.mostrar_info()
+
     """
     def __setattr__(self, key, value):
         self.__dict__[key] = value
@@ -220,6 +225,62 @@ class User(ABC):
 
         return has_lower and has_upper and has_digit and has_special
 
+    @staticmethod
+    def is_valid(card_num: str, exp_date: str, cvv: str) -> int:
+        """
+        Function to validate a card info (Card number, Expiration date and CVV)
+        Expiration date -> Date given is not the present (MM/YY format)
+        CVV -> CVV has 3 or 4 digits
+        Card number -> has 15 or 16 digits and Luhn algorithm:
+        1- Start from the last digit, and double the value of every second digit
+        2- If the result of doubling a number gives a 2-digit number, add the digits of the product (e.g., 12: 1 + 2 = 3)
+        3- Sum every final digits
+        4- If sum % 10 == 0, card number is valid
+
+        Parameters
+        ----------
+        card_num : str
+            The card number to validate, only numbers.
+        exp_date: str
+            The expiration date of the card.
+        cvv: str
+            Card's CVV
+
+        Returns
+        -------
+        int
+            - 0 if card is valid
+            - 1 if expiration date is not valid
+            - 2 if CVV does not have 3 or 4 digits
+            - 3 if card does not pass Luhn algorithm or length is not valid
+
+        Raises
+        ------
+        ValueError
+            If any of the parameters characters are invalid
+        """
+        if not card_num.isdigit(): raise ValueError('Card number must contain only numbers.')
+        if not cvv.isdigit(): raise ValueError('CVV must contain only digits.')
+
+        exp_date = datetime.strptime(exp_date, '%m/%y')
+        present = datetime.now()
+        if exp_date.month != present.month and exp_date.year != present.year:
+            if exp_date.date() < present.date(): return 1
+
+        if len(cvv) not in {3, 4}: return 2
+
+        if len(card_num) not in {15, 16}: return 3
+        total = 0
+        reverse_card = card_num[::-1]  # Start from last digit
+        for i, digit in enumerate(reverse_card):
+            n = int(digit)
+            if i % 2 == 1:  # Every second digit gets doubled
+                n *= 2
+                if n > 9:  # n is a 2-digit number?
+                    n -= 9
+            total += n  # Sum final digit
+        return 0 if total % 10 == 0 else 3
+
     def export_user_csv(self, tempdir: str) -> str:
         """
         Gets user's info and exports it to a CSV file.
@@ -272,7 +333,7 @@ class User(ABC):
         Path
             System path to the file
         """
-        funcs = [self.export_user_csv, self.export_user_xml]
+        funcs = [self.export_user_csv, self.export_user_pdf, self.export_user_xml]
         proccess: list[mp.Process] = []
 
         temp_dir = tempfile.gettempdir()
@@ -310,4 +371,4 @@ class User(ABC):
         Displays the complete public information about an account.
 
         """
-        return f'Usuario: {self._username} Nombre: {self.nombre} Email: {self.email} Telefono: {self.telefono}, Dinero: {self.money}'import crypto as cy
+        return f'Usuario: {self._username}\nNombre: {self.nombre}\nEmail: {self.email}\nTelefono: {self.telefono}\nDinero: {self.money}'

@@ -1,45 +1,51 @@
-from generic_posts import Post
 from typing import Optional, Self
-from file_utils import CSVFile, Path, PDFFile, PDFDemand, XMLFile
+from .generic_posts import Post
+from file_utils import CSVFile, Path, PDFFile, PDFOffer, XMLFile
 
 
-class Demand(Post):
+class Offer(Post):
     """
-    Class representing a demand, inheriting from Publication.
+    Class representing an offer, inheriting from Publication.
 
     Attributes
     ----------
-    urgency : int
-        Level of urgency associated with the demand. As higher is its value, higher is its urgency.
+    price : float
+        Price associated with the offer.
 
     Methods
     -------
     display_information() -> str
-        Displays the complete information of the demand.
+        Displays the complete information of the offer.
     """
-
-    def __init__(self, title: str, description: str, user: str, image: Optional[str]=None, urgency: int=3) -> None:
+    offer_feed: dict[str,dict[str,str]] = {}
+    def __init__(self, title: str, description: str, user: str, image: Optional[str]=None, price: float=0) -> None:
         """
-        Initializes a Demand instance.
+        Initializes an Offer instance.
 
         Parameters
         ----------
         title : str
-            Title of the demand.
+            Title of the offer.
         description : str
-            Description of the demand.
+            Description of the offer.
         user : str
-            User who creates the demand.
+            User who publishes the offer.
         image : str, optional
-            Image associated with the demand (default is None).
-        urgency : int
-            Level of urgency (e.g., from 1 to 5, where 5 is the highest urgency) (default is 3).
+            Image associated with the offer.
+        price : float
+            Price of the offer (default is 0).
         """
         super().__init__(title, description, user, image)
-        self.urgency = urgency
+        self.price = price
+        type(self).offer_feed[self.title] = {"type": "offer", "description": self.description,
+                                             "user": self.user, "price": self.price, 'category': self.category}
+
+    def add_category(self, category: str) -> None:
+        super().add_category(category)
+        type(self).offer_feed[self.title]['category'] = category
 
     @classmethod
-    def import_post_csv(cls, path: str | Path) -> Self: # from_csv()
+    def import_post_csv(cls, path: str | Path) -> Self:
         """
         Imports a post from a CSV file.  (Must be implemented in subclasses)
 
@@ -53,18 +59,19 @@ class Demand(Post):
 
         Returns
         -------
-        Demand Instance
+        Offer Instance
         """
         f = CSVFile(path)
         f.read()
-        if f.data[0][-1] != 'Demand':
-            raise NotImplementedError('Post type is not Demand')
+        if f.data[0][-1] != 'Offer':
+            raise NotImplementedError('Post type is not Offer')
 
         obj = cls.__new__(cls)
         for row in f.data:
             for i, value in enumerate(row):
                 if f.headers[i] != 'post_type':
                     setattr(obj, f.headers[i], value)
+
         return obj
 
     @classmethod
@@ -72,35 +79,38 @@ class Demand(Post):
         f = XMLFile(path)
         obj = cls.__new__(cls)
         for key, value in f.read().items():
-            if key == 'type' and value != 'Demand':
-                raise NotImplementedError('Post type is not Demand')
+            if key == 'type' and value != 'Offer':
+                raise NotImplementedError('Post type is not Offer')
             setattr(obj, key, value)
 
         return obj
 
     def export_post_pdf(self, tempdir) -> str:
         f = PDFFile(f'{tempdir}/Post.pdf')
-        pdf_content = PDFDemand(
+        pdf_content = PDFOffer(
             title=self.title,
             description=self.description,
             user=self.user,
             image=self.image,
-            urgency=self.urgency,
+            price=self.price,
             publication_date=self.publication_date,
             category=self.category
         )
         f.write(pdf_content)
         return f.path.absolute
 
-
     def display_information(self) -> str:
         """
-        Displays the complete information of the demand, including the urgency level.
+        Displays the complete information of the offer, including the price.
 
         Returns
         -------
         str
-            Detailed information about the demand.
+            Detailed information about the offer.
         """
         base_info = super().display_information()
-        return f'{base_info}, Urgency: {self.urgency}'
+        return f'{base_info}\nPrice: {self.price}'
+
+if __name__ == '__main__':
+    a =  Offer('Titulo1', 'DescEj', 'lunes', None, 50)
+    a.export_post_csv('../data/')

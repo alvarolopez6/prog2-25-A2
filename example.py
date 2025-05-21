@@ -1,4 +1,5 @@
 import requests
+from feed import feed
 
 URL='http://127.0.0.1:5000'
 def main() -> None:
@@ -77,7 +78,7 @@ def main() -> None:
             print("3- America Express")
             print("4- Pocket")
             print("5- Paysera")
-            metodo = int(input("Elige una de las opciones "))
+            metodo = int(input("Elige una de las OPCIÓNes "))
         r = requests.put(f'{URL}/metodo_pago?metodo={metodo}',
                          headers={'Authorization': 'Bearer ' + token if token else ''})
         print(r.status_code)
@@ -92,11 +93,20 @@ def main() -> None:
             print(r.status_code)
             print(r.text)
 
-    def publicar_post():
+    def publicar_offer():
         # Publicar Post(Freelancer)
-        r = requests.post(f'{URL}/posts/offers?titulo={input("INTRODUCE EL TITULO DE LA PUBLICACION ")}'
+        r = requests.post(f'{URL}/posts?titulo={input("INTRODUCE EL TITULO DE LA PUBLICACION ")}'
                           f'&description={input("INTRODUCE LA DESCRIPCION ")}'
                           f'&price={input("INTRODUCE EL PRECIO ")}',
+                          headers={'Authorization': 'Bearer ' + token if token else ''})
+        print(r.status_code)
+        print(r.text)
+
+    def publicar_demand():
+        # Publicar Post(Consumer)
+        r = requests.post(f'{URL}/posts?titulo={input("INTRODUCE EL TITULO DE LA PUBLICACION ")}'
+                          f'&description={input("INTRODUCE LA DESCRIPCION ")}'
+                          f'&urgency={input("INTRODUCE LA URGENCIA (1, 5) ")}',
                           headers={'Authorization': 'Bearer ' + token if token else ''})
         print(r.status_code)
         print(r.text)
@@ -113,6 +123,16 @@ def main() -> None:
         else:
             print(r.text)
             print(r.status_code)
+
+    def mostrar_post_feed():
+        # Iniciar feed
+        r = requests.get(f'{URL}/feed')
+        if r.status_code == 200:
+            feed(r.json())
+        else:
+            print(r.json())
+            print(r.status_code)
+
 
     def mostrar_propios_posts():
         #Mostrar Propios Posts
@@ -157,24 +177,76 @@ def main() -> None:
         print(r.status_code)
         print(r.text)
 
-    def exportar_perfil_csv():
-        # Exportar perfil actual a CSV
-        r = requests.get(f'{URL}/usuario/export', headers={'Authorization': 'Bearer ' + token if token else ''})
+    def exportar_perfil():
+        # Exportar perfil actual a CSV, PDF, XML o ZIP
+        while True:
+            export_opc = input(f'Elija a que formato quiere exportar su perfil:\n'
+                               f'1.- Archivo CSV\n'
+                               f'2.- Archivo PDF\n'
+                               f'3.- Archivo XML\n'
+                               f'4.- Archivo ZIP (contiene todos los anteriores)\n')
+            match export_opc:
+                case '1':
+                    r = requests.get(f'{URL}/usuario/export/csv', headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.csv'
+                    break
+                case '2':
+                    r = requests.get(f'{URL}/usuario/export/pdf', headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.pdf'
+                    break
+                case '3':
+                    r = requests.get(f'{URL}/usuario/export/xml', headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.xml'
+                    break
+                case '4':
+                    r = requests.get(f'{URL}/usuario/export/zip', headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.zip'
+                    break
+                case _:
+                    print('Opción no válida')
+
         print(r.status_code)
         if r.status_code == 200:
-            with open('profile.csv', mode='wb') as f:
+            with open(f'profile{extension}', mode='wb') as f:
                 f.write(r.content)
-            print('Perfil exportado como "profile.csv"')
+            print(f'Perfil exportado como "profile{extension}"')
 
     def exportar_post_csv():
-        # Exportar post a CSV
-        r = requests.get(f'{URL}/posts/export?titulo={input("Introduzca el titulo del post: ")}',
-                         headers={'Authorization': 'Bearer ' + token if token else ''})
+        # Exportar post a CSV, PDF, XML o ZIP
+        while True:
+            export_opc = input(f'Elija a que formato quiere exportar el post:\n'
+                               f'1.- Archivo CSV\n'
+                               f'2.- Archivo PDF\n'
+                               f'3.- Archivo XML\n'
+                               f'4.- Archivo ZIP (contiene todos los anteriores)\n')
+            match export_opc:
+                case '1':
+                    r = requests.get(f'{URL}/posts/export/csv?titulo={input("Introduzca el titulo del post: ")}',
+                                     headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.csv'
+                    break
+                case '2':
+                    r = requests.get(f'{URL}/posts/export/pdf?titulo={input("Introduzca el titulo del post: ")}',
+                                     headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.pdf'
+                    break
+                case '3':
+                    r = requests.get(f'{URL}/posts/export/xml?titulo={input("Introduzca el titulo del post: ")}',
+                                     headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.xml'
+                    break
+                case '4':
+                    r = requests.get(f'{URL}/posts/export/zip?titulo={input("Introduzca el titulo del post: ")}',
+                                     headers={'Authorization': 'Bearer ' + token if token else ''})
+                    extension = '.zip'
+                    break
+                case _:
+                    print('Opción no válida')
         print(r.status_code)
         if r.status_code == 200:
-            with open('post.csv', mode='wb') as f:
+            with open(f'post{extension}', mode='wb') as f:
                 f.write(r.content)
-            print('Post exportado como "post.csv"')
+            print(f'Post exportado como "post{extension}"')
 
     def forza_quitar_cuenta():
         # FORZA QUITAR UNA CUENTA
@@ -183,85 +255,116 @@ def main() -> None:
         print(r.status_code)
         print(r.text)
 
+    def forzar_borrar_post():
+        # Borrar un post
+        r = requests.delete(f'')
+
     def cancelar_un_contrato():
         # Cancelar Un Contrato
         r = requests.delete(
-            f'{URL}/usuario/hire?tuser={input("Introduzca el usuario del freelancer que con quien quieres finalizar el contrato ")}'
-            f'&titulo={input("Introduzca el titulo de la oferta que quieres cancelar ")}',
+            f'{URL}/usuario/hire?tuser={input("Introduzca el usuario del freelancer que con quien quieres finalizar el contrato: ")}'
+            f'&titulo={input("Introduzca el titulo de la oferta que quieres cancelar: ")}'
+            f'&valoracion={input("Introduzca una valoracion del FreeLancer: ")}',
             headers={'Authorization': 'Bearer ' + token if token else ''})
+        print(r.status_code)
+        print(r.text)
+    
+    def depositar_dinero():
+        # Dipositar Dinero
+        r = requests.put(
+            f'{URL}/money?number={input("INTRODUZCA EL NUMERO DE TARJETA: ")}'
+            f'&cvv={input("INTRODUZCA EL CVV: ")}'
+            f'&exp={input("INTRODUCA EL EXP: ")}',
+            f'&quantity={input("INTRODUCA LA CANTIDAD: ")}',
+            headers={'Authorization': 'Bearer ' + token if token else ''}
+        )
         print(r.status_code)
         print(r.text)
 
     op: str = ''
     token: str | None = None
 
-    while op != '3':
+    while op != '5':
         print("MENU PRINCIPAL")
         print("1- Iniciar Sesion")
         print("2- Registrar una nueva cuenta")
-        print("3- Salir")
-        op = input("POR FAVOR ELIGE LA OPCION ")
+        print("3- Ver todos los posts publicados")
+        print("4- Iniciar feed")
+        print("5- Salir")
+        op = input("POR FAVOR ELIGE LA OPCIÓN ")
         match op:
             case "1":
                 # 1: Iniciar Sesion
-                token,status_code = iniciar_sesion()
-                while token is not None and status_code==200:
+                token, status_code = iniciar_sesion()
+                while token is not None and status_code == 200:
                     print("**********HAS INICIADO SESSION COMO CONSUMER**********")
                     print("1- Actualizar Datos")
                     print("2- Mostrar Datos de la sesion actual")
                     print("3- Borrar la cuenta Actual")
                     print("4- Cambiar el password")
                     print("5- Ver todos los posts publicados")
-                    print("6- Exportar perfil actual a CSV")
-                    print("7- Exportar post a CSV")
-                    print("8- Cambiar el metodo de pago (Consumer)")
-                    print("9- Contratar Servicio (Consumer)")
-                    print("10- Ver servicios contratados (Consumer)")
-                    print("11- Cancelar el contrato (Consumer)")
-                    print("12- Cerrar Sesión")
-                    opconsum= input("POR FAVOR ELIGE LA OPCION ")
+                    print("6- Iniciar Feed")
+                    print("7- Depositar Dinero En Cuenta")
+                    print("8- Exportar perfil actual a CSV")
+                    print("9- Exportar post a CSV")
+                    print("10- Cambiar el metodo de pago (Consumer)")
+                    print("11- Contratar Servicio (Consumer)")
+                    print("12- Ver servicios contratados (Consumer)")
+                    print("13- Cancelar el contrato (Consumer)")
+                    print("14- Publicar Demanda (Consumer)")
+                    print("15- Cerrar Sesión")
+                    opconsum= input("POR FAVOR ELIGE LA OPCIÓN ")
                     match opconsum:
                         case "1":
-                            # 1: Actualizar Datos
+                            # Consumer.1: Actualizar Datos
                             actualizar_datos()
                         case "2":
-                            # 2: Mostrar datos del usuario
+                            # Consumer.2: Mostrar datos del usuario
                             mostrar_datos_usuario()
                         case "3":
-                            # 3: Borrar la cuenta actual
+                            # Consumer.3: Borrar la cuenta actual
                             borrar_cuenta_actual()
                             token = None
                         case "4":
-                            # 4: Cambiar contraseña
+                            # Consumer.4: Cambiar contraseña
                             cambiar_password()
                         case "5":
-                            # 5: Ver Todos los Posts
+                            # Consumer.5: Ver Todos los Posts
                             mostrar_todos_posts()
                         case "6":
-                            # 6: Exportar Perfil Csv
-                            exportar_perfil_csv()
+                            # Consumer.6: Iniciar feed
+                            mostrar_post_feed()
                         case "7":
-                            # 7: Exportar Post Csv
-                            exportar_post_csv()
+                            # Consumer.7: Dipositar dinero
+                            depositar_dinero()
                         case "8":
-                            # 8: Cambiar metodo de pago
-                            cambiar_metodo_pago()
+                            # Consumer.8: Exportar perfil actual Csv
+                            exportar_perfil()
                         case "9":
-                            # 9:Contratar Servicios
-                            contratar_servicio()
+                            # Consumer.9: Exportar Post Csv
+                            exportar_post_csv()
                         case "10":
-                            # 10:Ver servicios contratados
-                            ver_servicio_contratado()
+                            # Consumer.10: Cambiar metodo de pago
+                            cambiar_metodo_pago()
                         case "11":
-                            # 11: Cancelar Un Contrato
-                            cancelar_un_contrato()
+                            # Consumer.11:Contratar Servicios
+                            contratar_servicio()
                         case "12":
-                            # 12: Cerrar sesión
+                            # Consumer.12:Ver servicios contratados
+                            ver_servicio_contratado()
+                        case "13":
+                            # Consumer.13: Cancelar Un Contrato
+                            cancelar_un_contrato()
+                        case "14":
+                            # Consumer.14: Publicar Demanda
+                            publicar_demand()
+                        case "15":
+                            # Consumer.15: Cerrar sesión
                             cerrar_session()
                             token = None
                             break
                         case _:
-                            print("POR FAVOR INTRODUCE UNA OPCION CORRECTA")
+                            print("POR FAVOR INTRODUCE UNA OPCIÓN CORRECTA")
 
                 while token is not None and status_code == 201:
                     print("**********HAS INICIADO SESSION COMO FREELANCER**********")
@@ -270,126 +373,127 @@ def main() -> None:
                     print("3- Borrar la cuenta Actual")
                     print("4- Cambiar el password")
                     print("5- Ver todos los posts publicados")
-                    print("6- Exportar perfil actual a CSV")
-                    print("7- Exportar post a CSV")
-                    print("8- Publicar Post (Freelancer)")
-                    print("9- Ver tus posts publicados(Freelancer)")
-                    print("10- Borrar Post (Freelancer)")
-                    print("11- Agregar Una Categoria a tus Posts(Freelancer)")
-                    print("12- Cerrar Session")
-                    oplancer = input("POR FAVOR ELIGE LA OPCION ")
+                    print("6- Iniciar feed")
+                    print("7- Dipositar Dinero")
+                    print("8- Exportar perfil actual a CSV")
+                    print("9- Exportar post a CSV")
+                    print("10- Publicar Offer (Freelancer)")
+                    print("11- Ver tus posts publicados(Freelancer)")
+                    print("12- Borrar Post (Freelancer)")
+                    print("13- Agregar Una Categoria a tus Posts(Freelancer)")
+                    print("14- Cerrar Session")
+                    oplancer = input("POR FAVOR ELIGE LA OPCIÓN ")
                     match oplancer:
                         case "1":
-                            # 1: Actualizar Datos
+                            # Freelancer.1: Actualizar Datos
                             actualizar_datos()
                         case "2":
-                            # 2: Mostrar datos del usuario
+                            # Freelancer.2: Mostrar datos del usuario
                             mostrar_datos_usuario()
                         case "3":
-                            # 3: Borrar la cuenta actual
+                            # Freelancer.3: Borrar la cuenta actual
                             borrar_cuenta_actual()
                             token = None
                         case "4":
-                            # 4: Cambiar contraseña
+                            # Freelancer.4: Cambiar contraseña
                             cambiar_password()
                         case "5":
-                            # 5: Ver Todos los Posts
+                            # Freelancer.5: Ver Todos los Posts
                             mostrar_todos_posts()
                         case "6":
-                            # 6: Exportar Perfil Csv
-                            exportar_perfil_csv()
+                            # Freelancer.6: Iniciar feed
+                            mostrar_post_feed()
                         case "7":
-                            # 7: Exportar Post Csv
-                            exportar_post_csv()
+                            # Freelancer.7: Dipositar dinero
+                            depositar_dinero()
                         case "8":
-                            # 8: Publicar Post(Freelancer)
-                            publicar_post()
+                            # Freelancer.8: Exportar Perfil Csv
+                            exportar_perfil()
                         case "9":
-                            # 9: Ver Posts propios (Freelancer)
-                            mostrar_propios_posts()
+                            # Freelancer.9: Exportar Post Csv
+                            exportar_post_csv()
                         case "10":
-                            # 10: Borrar Posts Propios
-                            borrar_propios_posts()
-                        case '11':
-                            #Agregar Categoria
-                            agregar_propia_categoria()
+                            # Freelancer.10: Publicar Post(Freelancer)
+                            publicar_offer()
+                        case "11":
+                            # Freelancer.11: Ver Posts propios (Freelancer)
+                            mostrar_propios_posts()
                         case "12":
-                            # 12: Cerrar sesión
+                            # Freelancer.12: Borrar Posts Propios
+                            borrar_propios_posts()
+                        case '13':
+                            # Freelancer.13: Agregar Categoria
+                            agregar_propia_categoria()
+                        case "14":
+                            # Freelancer.14: Cerrar sesión
                             cerrar_session()
                             token = None
                             break
                         case _:
-                            print("POR FAVOR INTRODUCE UNA OPCION CORRECTA")
+                            print("POR FAVOR INTRODUCE UNA OPCIÓN CORRECTA")
 
                 while token is not None and status_code == 202:
-                    print("**********HAS INICIADO SESSION COMO FREELANCER**********")
+                    print("**********HAS INICIADO SESSION COMO ADMIN**********")
                     print("1- Actualizar Datos")
-                    print("2- Mostrar Datos de la sesion actual")
+                    print("2- Mostrar Datos de la session actual")
                     print("3- Borrar la cuenta Actual")
                     print("4- Cambiar el password")
                     print("5- Ver todos los posts publicados")
-                    print("6- Exportar perfil actual a CSV")
-                    print("7- Exportar post a CSV")
-                    print("8- Forza Borrar Una Cuenta (Admin)")
-                    print("9- Cerrar Session")
-                    opladmin = input("POR FAVOR ELIGE LA OPCION ")
+                    print("6- Iniciar feed")
+                    print("7- Exportar perfil actual a CSV")
+                    print("8- Exportar post a CSV")
+                    print("9- Forzar Borrar Una Cuenta (Admin)")
+                    print("10- Forzar borrado de una publicación")
+                    print("11- Cerrar Session")
+                    opladmin = input("POR FAVOR ELIGE LA OPCIÓN ")
                     match opladmin:
                         case "1":
-                            # 1: Actualizar Datos
+                            # Admin.1: Actualizar Datos
                             actualizar_datos()
                         case "2":
-                            # 2: Mostrar datos del usuario
+                            # Admin.2: Mostrar datos del usuario
                             mostrar_datos_usuario()
                         case "3":
-                            # 3: Borrar la cuenta actual
+                            # Admin.3: Borrar la cuenta actual
                             borrar_cuenta_actual()
                             token = None
                         case "4":
-                            # 4: Cambiar contraseña
+                            # Admin.4: Cambiar contraseña
                             cambiar_password()
                         case "5":
-                            # 5: Ver Todos los Posts
+                            # Admin.5: Ver Todos los Posts
                             mostrar_todos_posts()
                         case "6":
-                            # 6: Exportar Perfil Csv
-                            exportar_perfil_csv()
+                            # Admin.6: Iniciar feed
+                            mostrar_post_feed()
                         case "7":
-                            # 7: Exportar Post Csv
-                            exportar_post_csv()
+                            # Admin.7: Exportar Perfil Csv
+                            exportar_perfil()
                         case "8":
-                            # 8: Forzar Borrar una cuenta
-                            forza_quitar_cuenta()
+                            # Admin.8: Exportar Post Csv
+                            exportar_post_csv()
                         case "9":
-                            # 12: Cerrar sesión
+                            # Admin.9: Forzar Borrar una cuenta
+                            forza_quitar_cuenta()
+                        case "10":
+                            # Admin.10: Forzar borrar una publicación
+                            forzar_borrar_post()
+                        case "11":
+                            # Admin.11: Cerrar sesión
                             cerrar_session()
                             token = None
                             break
             case "2":
-                #2: Registrate una cuenta
+                # 2: Registrar una cuenta
                 registrar_cuenta()
+            case "3":
+                # 3: Ver todos los posts
+                mostrar_todos_posts()
+            case "4":
+                # 4: Iniciar feed
+                mostrar_post_feed()
             case _:
-                print("POR FAVOR INTRODUCE UNA DE LAS OPCIONES ")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                print("POR FAVOR INTRODUCE UNA DE LAS OPCIÓNES ")
 
 if __name__=='__main__':
     main()
