@@ -2,23 +2,32 @@ from typing import Self
 
 from .user import User
 from post.offer import Offer
-from post.generic_posts import Post
+from post import Offer
 from file_utils import PDFFile, PDFConsumer, XMLFile, Path
 from db import SixerrDB, Database
 
-def _init(self, _) -> None:
+def _init(self, db) -> None:
     """
     Initializes the object instance when created externally
 
     In the process of external creation the object gets infused with data and outside initialized.
     """
-    self.servicios_contratados: set[Post] = set()
+    self.servicios_contratados: set[Offer] = set()
+    for post in db.retrieve(Offer, {'contractor': SixerrDB.get_user(self)}):
+        self.servicios_contratados.add(post)
+
+def _store(self, db) -> None:
+    """
+    Stores the object's attributes which do not fit in usual table columns
+    """
+    for servicio in self.servicios_contratados:
+        db.store(servicio)
 
 @Database.register(
     db=SixerrDB(),
     table='consumers',
     map={'payment':'metodo_de_pago'},
-    init=_init
+    init=_init, store=_store
 )
 class Consumer(User):
     """
@@ -77,7 +86,7 @@ class Consumer(User):
         """
         super().__init__(username, nombre, password, email, money, telefono)
         self.metodo_de_pago = metodo_de_pago
-        self.servicios_contratados: set[Post] = set()
+        self.servicios_contratados: set[Offer] = set()
 
     def contratar_servicio(self,post)-> None:
         """

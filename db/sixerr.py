@@ -100,6 +100,15 @@ class SixerrDB(Database, metaclass=Singleton):
             )
         )
 
+    def get_user(self, user: 'User') -> int:
+        """
+        Gets the id of a user from the database
+
+        :param user: ('User') The user to get the id for.
+        :returns: (int) The user's id.
+        """
+        return self.query('SELECT id FROM users WHERE username=?', user._username).fetchone()['id']
+
 if __name__ == '__main__':
     db = SixerrDB()
     db.sinit()

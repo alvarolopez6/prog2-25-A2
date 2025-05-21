@@ -13,6 +13,16 @@ def _init(self, _) -> None:
     In the process of external creation the object gets infused with data and outside initialized.
     """
     self.demandas_contratadas: set[Demand] = set()
+    for post in db.retrieve(Demand, {'contractor': SixerrDB.get_user(self)}):
+        self.demandas_contratadas.add(post)
+    self.opiniones = list(self.opiniones)
+
+def _store(self, db) -> None:
+    """
+    Stores the object's attributes which do not fit in usual table columns
+    """
+    for demanda in self.demandas_contratadas:
+        db.store(demanda)
 
 @Database.register(
     db=SixerrDB(),
@@ -22,7 +32,7 @@ def _init(self, _) -> None:
         'opinions':'opiniones',
         'abilities':'habilidades'
     },
-    init=_init
+    init=_init, store=_store
 )
 class Freelancer(User):
     """

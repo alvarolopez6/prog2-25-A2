@@ -41,7 +41,7 @@ class Adapters:
 
 # Register the adapter and converter
 sql.register_adapter(list, Adapters.from_list)
-sql.register_converter("LIST", Adapters.to_list)
+sql.register_converter("LIST", Adapters.to_tuple)
 
 sql.register_adapter(tuple, Adapters.from_tuple)
 sql.register_converter("TUPLE", Adapters.to_tuple)
@@ -326,6 +326,9 @@ class Database:
                         f'INSERT INTO {mt['__table__']} ({','.join(data.keys())}) VALUES ({','.join(['?']*len(data))})',
                         data.values()
                     )
+                # If store function defined call it
+                if callable(mt['__store__']):
+                    mt['__store__'](ob, self)
 
     def retrieve[C](self, cls: Type[C], cdata: dict[str, Any]={}) -> Iterator[C]:
         """
@@ -540,14 +543,15 @@ class Database:
 
     @dec_wparams
     @staticmethod
-    def register[C](cls: Type[C], table: str, map: dict[str, str], init: Callable[[C], None] | None=None, db: Self | None=None) -> Type[C]:
+    def register[C](cls: Type[C, Self], table: str, map: dict[str, str], init: Callable[[C], None] | None=None, db: Self | None=None) -> Type[C]:
         """
         Register a class for database storage and retrieval
 
         :param cls: (C) Class object to register
         :param table: (str) Database table to register it to
         :param map: (dict[str, str]) Mapping of table columns and instance attributes
-        :param init: (Callable[[C], None]) Optional initialization function for when retrieving instances, gets passed the instance with the data as a parameter
+        :param init: (Callable[[C, Self], None]) Optional initialization function for when retrieving instances, gets passed the instance with the data and the database as parameters
+        :param store: (Callable[[C, Self], None]) Optional storage function for when storing instances, gets passed the instance with the data and the database as parameters
         :param db: (Self) Optional database instance to update instances to automatically on attribute set
         :returns: (C) The registered class object
         """
@@ -558,6 +562,7 @@ class Database:
             '__table__': table,
             '__map__': map,
             '__init__': init,
+            '__store__': store,
             '__db__': db
         }
         # If passed db
