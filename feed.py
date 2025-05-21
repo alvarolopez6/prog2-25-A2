@@ -1,7 +1,8 @@
 import time
 import threading
-from typing import Any
+from typing import Any, Optional
 
+# Set of allowed categories to validate user input for category filters
 allowed_categories = {
         "Mathematics", "Science", "Physics", "Chemistry", "Biology",
         "History", "Geography", "Literature", "Art", "Music",
@@ -11,38 +12,85 @@ allowed_categories = {
 
 # Custom exceptions
 class InvalidPostTypeError(Exception):
-    def __str__(self):
+    """
+    Exception raised when an invalid post type is passed.
+    """
+    def __str__(self) -> str:
         return "Error, post type has to be 'offer','demand' or 'all'. To neglect this filter press enter."
 
+
 class InvalidCategoryError(Exception):
-    def __str__(self):
+    """
+    Exception raised when an invalid category is passed.
+    """
+    def __str__(self) -> str:
         return "Sorry, that category does not exit yet. To neglect this filter press enter."
 
+
 class InvalidKeywordsError(Exception):
-    def __str__(self):
+    """
+    Exception raised when invalid keywords are passed.
+    """
+    def __str__(self) -> str:
         return "Only letters, numbers and spaces are allowed in keywords. To neglect this filter, press Enter."
 
+
 class InvalidFeedModeError(Exception):
-    def __str__(self):
+    """
+    Exception raised when an invalid feed mode is passed.
+    """
+    def __str__(self) -> str:
         return "Invalid mode. Choose 'auto' or 'manual'."
 
+
 class NoMatchingPostsError(Exception):
-    def __str__(self):
+    """
+    Exception raised when no posts match the given criteria.
+    """
+    def __str__(self) -> str:
         return "No posts matched your search. Please try again with different filters."
 
-class InvalidPostDataError(Exception):
-    def __init__(self, post_id):
-        self.post_id = post_id
-
-    def __str__(self):
-        return f"Post with ID {self.post_id} contains invalid or incomplete data."
 
 def display_information(info: tuple[str, dict[str, Any]]) -> str:
+    """
+    Displays information about the given post.
+
+    Parameters
+    ----------
+    info : tuple[str, dict[str, Any]]
+        Post information. (title, {description:, ...})
+
+    Returns
+    -------
+    str
+        String representation of the post.
+    """
     return (f"Titulo:{info[0]}\nDescripción:{info[1]['description']}\nCreado por: {info[1]['user']}\n" +
             (f"Urgencia: {info[1]['urgency']}" if info[1]['type'] == 'demand'
             else f"Precio: {info[1]['price']}€"))
 
-def filter_posts(post_type=None, category=None, keywords=None, post_dict: dict[str, dict[str, Any]]=None):
+def filter_posts(post_type: Optional[str] = None,
+                 category: Optional[str] = None, keywords: Optional[str] = None,
+                 post_dict: dict[str, dict[str, Any]]=None) -> list[tuple[str, dict[str, Any]]]:
+    """
+    Filters posts given, using a given criteria.
+
+    Parameters
+    ----------
+    post_type : str, optional
+        Post type to filter. Defaults to all posts.
+    category : str, optional
+        Category to filter. Defaults to all categories.
+    keywords : str, optional
+        Keywords to filter. Defaults to None.
+    post_dict : dict[str, dict[str, Any]]
+        Dict with all posts. Title is key, other information is the value.
+
+    Returns
+    -------
+    list[tuple[str, dict[str, Any]]]
+        Filtered posts.
+    """
     # Validar que post_dict es un diccionario
     if not isinstance(post_dict, dict):
         raise TypeError("Post.posts must be a dictionary.")
@@ -70,14 +118,30 @@ def filter_posts(post_type=None, category=None, keywords=None, post_dict: dict[s
 
     return filtered
 
-def listen_keyboard(stop_feed):
+def listen_keyboard(stop_feed: list[bool]) -> None:
+    """
+    Waits for user to press Enter to stop the automatic feed.
+
+    Parameters
+    ----------
+    stop_feed : list[bool]
+        Shared list used as a flag to stop the feed.
+    """
     try:
         input("Press Enter anytime to stop the auto feed...\n")
         stop_feed[0] = True
     except Exception:
         print("There was a problem reading your input. The feed will continue.")
 
-def show_auto_feed(posts):
+def show_auto_feed(posts: list[tuple[str, dict[str, Any]]]) -> None:
+    """
+    Displays posts automatically every few seconds until interrupted by the user.
+
+    Parameters
+    ----------
+    posts : list[tuple[str, dict[str, Any]]]
+        List of posts to be shown.
+    """
     if not posts:
         print("No posts available.")
         return
@@ -89,6 +153,7 @@ def show_auto_feed(posts):
     index = 0
     while not stop_feed[0]:
         print(display_information(posts[index]))
+        print()
         for _ in range(3):
             if stop_feed[0]:
                 keyboard_thread.join()
@@ -102,7 +167,15 @@ def show_auto_feed(posts):
     keyboard_thread.join()
     print("\nFeed stopped by user.")
 
-def show_manual_feed(posts):
+def show_manual_feed(posts: list[tuple[str, dict[str, Any]]]) -> None:
+    """
+    Allows user to manually navigate through the list of posts.
+
+    Parameters
+    ----------
+    posts : list[tuple[str, dict[str, Any]]]
+        List of posts to be shown.
+    """
     if not posts:
         print("No posts available.")
         return
@@ -128,7 +201,15 @@ def show_manual_feed(posts):
                 print("No more posts. Looping back to the start.")
                 index = 0
 
-def feed(post_dict):
+def feed(post_dict: list[tuple[str, dict[str, Any]]]) -> None:
+    """
+    Main function to execute the feed, ask for filters and display posts accordingly.
+
+    Parameters
+    ----------
+    post_dict : dict[str, dict[str, Any]]
+        Dictionary of posts to be processed.
+    """
     print(
         'Posts can be filtered by type(offer/demand), category and keywords. These filters are applied independently. '
         'To neglect any filter press enter.')

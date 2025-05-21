@@ -10,7 +10,8 @@ from utils.crypto import hash_str
 from typing import Any, Union
 from post.offer import Offer
 from post.generic_posts import Post
-#from database import SixerrDB
+from db import SixerrDB
+import user as _user
 
 class WrongPass(Exception):
     """
@@ -33,44 +34,93 @@ class RestrictionPermission(Exception):
         return f'No puedes Realizar esta tarea debido a que eres : {self.tipo}'
 
 
-"""
-class DBError(Exception):
-    def __init__(self, name: str, *args):
-        self.name = name
-    def __str__(self):
-        return f'Couldn\'t start database {self.name}'
-"""
-
 class App:
-    def __init__(self):
+    def __init__(self) -> None:
         self.flask = Flask('sixerr')
-        """
-        self.db = SixerrDB({})
-        for user in self.db.retrieve(Freelancer):
-            User.usuarios[user.username]=user
-        for user in self.db.retrieve(Consumer):
-            User.usuarios[user.username]=user
-        """
+        self.db = SixerrDB()
+        self.db.init()
+
+        self.to_delete = set()
+        self.to_delete_posts = set()
+
+
+        # Retrieve users
+        for utype in (Consumer, Freelancer):
+            for user in self.db.retrieve(utype):
+                User.usuarios[user._username]=user
+                print('\n')
+                print('USERNAME: ', user._username)
+                match type(user):
+                    case _user.Consumer:
+                        for usuario in user.servicios_contratados:
+                            print('---->', usuario.title)
+                    case _user.Freelancer:
+                        for usuario in user.demandas_contratadas:
+                            print('---->', usuario.title)
+                    case _:
+                        print('ERROR: ', type(user))
+
+        print(User.usuarios)
+
+        x = Admin('Admin', 'Admin', '12', 'cr7@messi.com', '656565888')
+        y = Freelancer('Freelancer','Ismael', '12', 'younes@gmail.com', -1, opiniones=[9,8,6])
+        z = Consumer('Consumer', 'Consumer', '12', 'unai@gmail.com', -1)
+
+        off = Offer('Oferta1', 'DescOferta', 'Consumer', None, 99.99)
+        off1 = Offer('Oferta2', 'DescOferta22', 'Consumer', None, 99)
+        dem = Demand('Demanda1', 'DescDemanda', 'Freelancer', None, 4)
+        dem1 = Demand('Demanda2', 'DescDemanda', 'Freelancer', None, 4)
+
+        y.demandas_contratadas.add(dem)
+        y.demandas_contratadas.add(dem1)
+
+        z.servicios_contratados.add(off)
+        z.servicios_contratados.add(off1)
+
+        #self.db.store(x)
+        #self.db.store(y)
+        #self.db.store(z)
+
         self.flask.config["JWT_SECRET_KEY"] = "super-secret"
         self.jwt = JWTManager(self.flask)
-    """
-    def __del__(self):
-        ...
-    """
+
+    def __del__(self) -> None:
+        self.close()
+
+    def close(self) -> None:
+        print('X')
+        # Delete users
+        for user in self.to_delete:
+            match type(user):
+                case _user.Consumer:
+                    posts = user.servicios_contratados
+                case _user.Freelancer:
+                    posts = user.demandas_contratadas
+                case _:
+                    posts = []
+            for post in posts:
+                self.db.delete(post)
+            self.db.delete(user)
+        print(self.to_delete_posts)
+        # Delete posts
+        for post in self.to_delete_posts:
+            print('Z')
+            try:
+                self.db.query('DELETE FROM posts WHERE username=? AND title=?', (post.user, post.title))
+            except Exception as e:
+                print(e)
+                pass
+        # Store users
+        for user in User.usuarios.values():
+            print('Y')
+            self.db.store(user)
+
     def start(self):
         self.flask.run(debug=True)
-        """
-        if not self.db.init():
-            raise DBError(self.db.name)
-        for user in self.db.get_users():
-            self.users[user['id']] = User.from_dict(user)
-        """
+        self.close()
 
 if __name__ == '__main__':
     app = App()
-    Freelancer("Lancer","Lancer","Lancer","Lancer",money=0)
-    Consumer("Consum","Consum","Consum","Consum",money=1000)
-    Admin('Admin','Admin','Admin','Admin')
 
     @app.flask.route('/signup', methods=['POST'])
     def signup() -> tuple[str, int]:
@@ -208,10 +258,11 @@ if __name__ == '__main__':
             if User.usuarios[usuario].posts:
                 return f'No se ha Borrado Tu cuenta Debido a que tienes posts',409
             else:
-                ### db.delete(User.usuarios[usuario])
+                app.to_delete.add(User.usuarios[usuario]) # El thread de flask no deja acceder a sqlite
                 del User.usuarios[usuario]
                 return f'Se ha borrado tu cuenta de forma correcta',200
-        except:
+        except Exception as e:
+            print(e)
             return f'Se Ha producido un error',404
 
 
@@ -427,8 +478,12 @@ if __name__ == '__main__':
         if current_user in Post.posts:
             for post in Post.posts[current_user]:
                 if post.title == titulo:
+                    app.to_delete_posts.add(post) # El thread de flask no deja acceder a sqlite
                     Post.posts[current_user].remove(post)
-
+                    if isinstance(post, Offer):
+                        del Offer.offer_feed[post.title]
+                    else:
+                        del Demand.demand_feed[post.title]
                     if not Post.posts[current_user]:
                         del Post.posts[current_user]
 
@@ -540,6 +595,16 @@ if __name__ == '__main__':
     @app.flask.route('/usuario/export/xml', methods=['GET'])
     @jwt_required()
     def exportar_perfil_xml() -> tuple[Union[Response, int], int]:
+        """
+        Exports a post's information by its title into an XML file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
         current_user = get_jwt_identity()
         user = User.usuarios[current_user]
         return send_file(user.export_user_xml('data/')), 200
@@ -548,6 +613,16 @@ if __name__ == '__main__':
     @app.flask.route('/usuario/export/zip', methods=['GET'])
     @jwt_required()
     def exportar_perfil_zip() -> tuple[Union[Response, int], int]:
+        """
+        Exports a post's information by its title into an XML file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
         current_user = get_jwt_identity()
         user = User.usuarios[current_user]
         return send_file(user.export_user()), 200
@@ -786,6 +861,10 @@ if __name__ == '__main__':
                 return f'El usuario {user_target} no tiene la publicación {titulo}', 404
             else:
                 Admin.delete_post(user_target,titulo)
+                try:
+                    del Offer.offer_feed[titulo]
+                except Exception:
+                    del Demand.demand_feed[titulo]
                 return f'Se eliminó el post "{titulo}" de {user_target}', 200
 
         except RestrictionPermission as e:

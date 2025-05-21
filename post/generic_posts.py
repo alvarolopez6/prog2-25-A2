@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Self
 from datetime import datetime
 from file_utils import CSVFile, Path, XMLFile
+from db import Database, SixerrDB
 import multiprocessing as mp
 import tempfile
 import zipfile
@@ -14,19 +15,31 @@ except ImportError:
 
 modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
 
-'''
+
+
+def _init(_self: 'Post', db: Database) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
+    if _self.user in Post.posts:
+        Post.posts[_self.user].add(_self)
+    else:
+        Post.posts[_self.user] = {_self}
+
+
 @Database.register(
     table='posts',
     map={
-        'user':'user',
+        'username':'user',
         'title':'title',
         'fecha':'publication_date',
         'description':'description',
         'image':'image',
-        'categories':'categories'
-}
+        'category':'category'
+    }, init=_init
 )
-'''
 class Post(ABC):
     """
     Abstract class representing a generic publication.
@@ -97,7 +110,7 @@ class Post(ABC):
         self.description = description
         self.user = user
         self.image = image
-        self.publication_date = datetime.now().date()
+        self.publication_date = str(datetime.now().date())
         self.category = None
 
         if user in Post.posts:
@@ -192,7 +205,7 @@ class Post(ABC):
 
     def export_post(self) -> str:
         """
-        Gets a post data and exports it to a CSV file
+        Gets a post data and exports it to a ZIP file with a .csv, .pdf, and .xml files inside.
 
         Returns
         -------
@@ -222,13 +235,8 @@ class Post(ABC):
 
         return zip_file.absolute
 
-    @classmethod
     @abstractmethod
-    def import_post_xml(cls, path: str | Path) -> Self:
-        pass
-
-    @abstractmethod
-    def display_information(self) -> str: # Usar __str__()
+    def display_information(self) -> str:
         """
         Abstract method to display the publication's information.
 

@@ -6,26 +6,29 @@ from file_utils import PDFFile, PDFFreelancer, XMLFile, Path
 
 from db import SixerrDB, Database
 
-def _init(self, _) -> None:
+def _init(_self, db) -> None:
     """
     Initializes the object instance when created externally
 
     In the process of external creation the object gets infused with data and outside initialized.
     """
-    self.demandas_contratadas: set[Demand] = set()
-    for post in db.retrieve(Demand, {'contractor': SixerrDB.get_user(self)}):
-        self.demandas_contratadas.add(post)
-    self.opiniones = list(self.opiniones)
+    _self.__dict__['demandas_contratadas']: set[Demand] = set()
+    for post in db.retrieve(Demand, {'contractor': SixerrDB().get_user(_self)}):
+        _self.__dict__['demandas_contratadas'].add(post)
 
-def _store(self, db) -> None:
+    if ('opiniones' in _self.__dict__) and (_self.__dict__['opiniones']):
+        _self.__dict__['opiniones'] = list(_self.__dict__['opiniones'])
+    else:
+        _self.__dict__['opiniones'] = []
+
+def _store(_self, db) -> None:
     """
     Stores the object's attributes which do not fit in usual table columns
     """
-    for demanda in self.demandas_contratadas:
+    for demanda in _self.demandas_contratadas:
         db.store(demanda)
 
 @Database.register(
-    db=SixerrDB(),
     table='freelancers',
     map={
         'rating':'rating',

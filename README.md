@@ -24,7 +24,6 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
 * Guardará la información de los usuarios (consumer, freelancer, admin), las publicaciones (oferta, demanda) y las reseñas en una base de datos local. (Stefano)
 * Permitirá la creación de perfiles y la verificación de identidad de los mismos para distintos tipos de usuarios como consumers que contratan servicios, freelancers y admins. (Younes)
 * El freelancer tendrá la capacidad de subir publicaciones ofreciendo sus servicios y estas serán visibles para los usuarios. (Álvaro)
-* Implementación de un chat que permitirá la comunicación entre un freelancer y un consumidor. (Samrani)
 * Se dispondrá de una funcionalidad que nos permitirá ver de forma cómoda varias de las publicaciones. (Unai)
 * Se desarrollará un sistema de búsqueda feed que ayuda a encontrar los servicios necesitados a partir de palabras clave y filtrando por categorías. (Unai)
 * Se creará un sistema de reseñas que permite a los consumers valorar la experiencia al contratar servicios con freelancers. (Younes)
@@ -59,6 +58,11 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
   * `PUT /metodo_pago`
   * Requiere JWT (Consumer)
   * Parámetros: Método de pago (`1`=VISA, `2`=Paypal, `3`=AmEx, `4`=Pocket, `5`=Paysera)
+
+* Depositar dinero en la cuenta de uno mismo
+  * `PUT /money`
+  * Requiere JWT
+  * Parámetros: cantidad de dinero
 
 * Borrar cuenta actual
   * `DELETE /usuario`
@@ -100,6 +104,9 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
   * Requiere JWT
   * Parámetros: Título del post, Categoría
 
+* Feed que permite ver y filtrar publicaciones
+  * `GET /feed`
+
 
 ### Contrataciones (Solo Consumers)
 * Contratar un servicio
@@ -118,16 +125,49 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
 
 
 ### Exportación de Datos
-* Exportar perfil actual
-  * `GET /usuario/export`
+* Exportar perfil actual a csv
+  * `GET /usuario/export/csv`
+  * Requiere JWT
+  * Descarga `profile.pdf`
+
+* Exportar perfil actual a pdf
+  * `GET /usuario/export/pdf`
   * Requiere JWT
   * Descarga `profile.csv`
 
-* Exportar post específico
-  * `GET /posts/export`
+* Exportar perfil actual a xml
+  * `GET /usuario/export/xml`
+  * Requiere JWT
+  * Descarga `profile.xml`
+
+* Exportar perfil actual a zip
+  * `GET /usuario/export/zip`
+  * Requiere JWT
+  * Descarga `profile.zip`
+
+* Exportar post específico a csv
+  * `GET /posts/export/csv`
   * Requiere JWT
   * Parámetros: Título del post
   * Descarga `post.csv`
+
+* Exportar post específico a pdf
+  * `GET /posts/export/pdf`
+  * Requiere JWT
+  * Parámetros: Título del post
+  * Descarga `post.pdf`
+
+* Exportar post específico a xml
+  * `GET /posts/export/xml`
+  * Requiere JWT
+  * Parámetros: Título del post
+  * Descarga `post.xml`
+
+* Exportar post específico a zip
+  * `GET /posts/export/zip`
+  * Requiere JWT
+  * Parámetros: Título del post
+    * Descarga `post.zip`
 
 
 ### Funcionalidades Administrativas (Solo Admin)

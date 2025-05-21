@@ -6,25 +6,24 @@ from post import Offer
 from file_utils import PDFFile, PDFConsumer, XMLFile, Path
 from db import SixerrDB, Database
 
-def _init(self, db) -> None:
+def _init(_self: 'Consumer', db: Database) -> None:
     """
     Initializes the object instance when created externally
 
     In the process of external creation the object gets infused with data and outside initialized.
     """
-    self.servicios_contratados: set[Offer] = set()
-    for post in db.retrieve(Offer, {'contractor': SixerrDB.get_user(self)}):
-        self.servicios_contratados.add(post)
+    _self.__dict__['servicios_contratados']: set[Offer] = set()
+    for post in db.retrieve(Offer, {'contractor': SixerrDB().get_user(_self)}):
+        _self.__dict__['servicios_contratados'].add(post)
 
-def _store(self, db) -> None:
+def _store(_self: 'Consumer', db: Database) -> None:
     """
     Stores the object's attributes which do not fit in usual table columns
     """
-    for servicio in self.servicios_contratados:
+    for servicio in _self.servicios_contratados:
         db.store(servicio)
 
 @Database.register(
-    db=SixerrDB(),
     table='consumers',
     map={'payment':'metodo_de_pago'},
     init=_init, store=_store
@@ -101,6 +100,23 @@ class Consumer(User):
 
 
     def export_user_pdf(self, tempdir: str) -> str:
+        """
+        Export the user's data to a PDF file.
+
+        Generates a PDF document containing the user's profile information,
+        including contact details, posts, payment method, balance, and contracted services.
+        The PDF is saved to the specified temporary directory.
+
+        Parameters
+        ----------
+        tempdir : str
+            Path to the temporary directory where the PDF will be saved.
+
+        Returns
+        -------
+        str
+            Absolute path to the generated PDF file.
+        """
         f = PDFFile(f'{tempdir}/Post.pdf')
         pdf_content = PDFConsumer(
             username=self.username,
@@ -115,27 +131,3 @@ class Consumer(User):
         f.write(pdf_content)
         return f.path.absolute
 
-    @classmethod
-    def import_user_csv(cls, path: str | Path) -> Self:
-        pass
-
-    @classmethod
-    def import_user_xml(cls, path: str | Path) -> Self:
-        f = XMLFile(path)
-        obj = cls.__new__(cls)
-        for key, value in f.read().items():
-            if key == 'type' and value != 'Consumer':
-                raise NotImplementedError('User type is not Consumer')
-            setattr(obj, key, value)
-
-        return obj
-'''
-    def mostrar_info(self) -> str:
-        """
-
-        Method that uses the super info from User and extend it with its own information
-
-        """
-        info=super().mostrar_info()
-        return info + f' metodo de pago: {self.metodo_de_pago}'
-'''

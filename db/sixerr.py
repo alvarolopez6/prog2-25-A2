@@ -61,14 +61,15 @@ class SixerrDB(Database, metaclass=Singleton):
                     'name': 'posts',
                     'columns': (
                         {'name': 'id', 'type': 'INTEGER', 'mods': ('PRIMARY KEY',)},
-                        {'name': 'user', 'type': 'INTEGER', 'mods': ('NOT NULL', 'REFERENCES users(id)')},
-                        {'name': 'title', 'type': 'TEXT', 'mods': ('NOT NULL',)},
+                        {'name': 'username', 'type': 'TEXT', 'mods': ('NOT NULL',)},
+                        {'name': 'title', 'type': 'TEXT', 'mods': ('UNIQUE', 'NOT NULL',)},
                         {'name': 'fecha', 'type': 'TEXT', 'mods': ('NOT NULL',)},
+                        {'name': 'category', 'type': 'TEXT'},
                         {'name': 'description', 'type': 'TEXT'},
                         {'name': 'image', 'type': 'BLOB'},
                     ),
                     'indexes': (
-                        {'name': 'posts_user', 'columns': ('user',)},
+                        {'name': 'posts_id', 'columns': ('id',)},
                     )
                 },
                 {
@@ -76,7 +77,7 @@ class SixerrDB(Database, metaclass=Singleton):
                     'columns': (
                         {'name': 'id', 'type': 'INTEGER', 'mods': ('PRIMARY KEY', 'REFERENCES posts(id)')},
                         {'name': 'price', 'type': 'INTEGER', 'mods': ('NOT NULL',)},
-                        {'name': 'contractor', 'type': 'INTEGER', 'mods': ('REFERENCES consumers(id)',)},
+                        #{'name': 'contractor', 'type': 'INTEGER', 'mods': ('REFERENCES consumers(id)',)},
                     )
                 },
                 {
@@ -84,7 +85,7 @@ class SixerrDB(Database, metaclass=Singleton):
                     'columns': (
                         {'name': 'id', 'type': 'INTEGER', 'mods': ('PRIMARY KEY', 'REFERENCES posts(id)')},
                         {'name': 'urgency', 'type': 'INTEGER'},
-                        {'name': 'contractor', 'type': 'INTEGER', 'mods': ('REFERENCES freelancers(id)',)},
+                        #{'name': 'contractor', 'type': 'INTEGER', 'mods': ('REFERENCES freelancers(id)',)},
                     )
                 },
                 {
@@ -107,7 +108,7 @@ class SixerrDB(Database, metaclass=Singleton):
         :param user: ('User') The user to get the id for.
         :returns: (int) The user's id.
         """
-        return self.query('SELECT id FROM users WHERE username=?', user._username).fetchone()['id']
+        return self.query('SELECT id FROM users WHERE username=?', (user._username,)).fetchone()['id']
 
 if __name__ == '__main__':
     db = SixerrDB()

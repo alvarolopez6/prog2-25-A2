@@ -3,6 +3,7 @@ from os import PathLike
 from os.path import abspath, isdir
 from tkinter.constants import SEPARATOR
 from typing import Self, Type, Callable, Iterator
+
 from utils.decorators import dec_wparams, readonly, memoize
 from .schema import Schema
 from .exceptions import *
@@ -101,7 +102,11 @@ class Database:
             # Technically impossible
             if not row:
                 raise QueryError('Something has happened and we don\'t know what')
+            #print('\n')
+            #print(f'SELECT COUNT(*) AS count FROM {tdata[0]} WHERE {self.__get_target(self, tdata[0], allow=tuple(tdata[1].keys()))};')
+            #print(tdata, '-->', (row['count'] > 0))
             return (row['count'] > 0) # If count > 0 it has entries
+        #print(tdata, '-->', False, 'Ex')
         return False
 
     def __str__(self) -> str:
@@ -221,7 +226,7 @@ class Database:
         """
         try:
             if not self.__connection:
-                self.__connection = sql.connect(self.__id if self.__uri else f'{self.__path}/{self.__id}.db', uri=self.__uri, detect_types=sql.PARSE_DECLTYPES, autocommit=False)
+                self.__connection = sql.connect(self.__id if self.__uri else f'{self.__path}/{self.__id}.db', uri=self.__uri, detect_types=sql.PARSE_DECLTYPES, autocommit=False, check_same_thread=False)
                 self.__connection.row_factory = sql.Row # Use row objects for rows instead of tuples
         except sql.Error as e:
             raise ConnectionError(f'On DB open, {e}')
@@ -311,7 +316,8 @@ class Database:
                                 raise SubscriptionError(f'Object {ob} has malformed reference dependency as parent \'{eref[1]}({eref[2]})\' is uninstantiated!')
                             # Update data
                             data = {**data, **{eref[0]:row[eref[2]]}} # Merged as {**x, **y}
-                        except QueryError:
+                        except QueryError as e:
+                            print(e, '\n\n')
                             raise SubscriptionError(f'Object {ob} has references to \'{eref[1]}({eref[2]})\' which has no related subscription!')
                 # If exists row update, else insert
                 if ((mt['__table__'], data) in self):
@@ -326,9 +332,13 @@ class Database:
                         f'INSERT INTO {mt['__table__']} ({','.join(data.keys())}) VALUES ({','.join(['?']*len(data))})',
                         data.values()
                     )
-                # If store function defined call it
-                if callable(mt['__store__']):
-                    mt['__store__'](ob, self)
+        # If object's class subscribed
+        if (type(obj) in type(self).subscribed) and getattr(type(obj), '__db__', None):
+            # Metadata dict
+            mt = type(obj).__db__
+            # If store function defined call it
+            if callable(mt['__store__']):
+                mt['__store__'](obj, self)
 
     def retrieve[C](self, cls: Type[C], cdata: dict[str, Any]={}) -> Iterator[C]:
         """
@@ -374,6 +384,7 @@ class Database:
                 for eref in erefs:
                     # Store erows
                     table_erows[eref[1]] = {*(((eref[1] in table_erows) and table_erows[eref[1]]) or ()), eref[2]}
+
         # Loop trough normal mro
         for cl in cls.__mro__:
             # If class subscribed
@@ -399,7 +410,6 @@ class Database:
                 for row in rows:
                     # Get row set
                     if (rset := _ematch(erefs, row)):
-                        print(type(cls), '---------', cls)
                         # Create new object instance
                         obj = cls.__new__(cls)
                         # Loop trough rset rows
@@ -543,7 +553,7 @@ class Database:
 
     @dec_wparams
     @staticmethod
-    def register[C](cls: Type[C, Self], table: str, map: dict[str, str], init: Callable[[C], None] | None=None, db: Self | None=None) -> Type[C]:
+    def register[C](cls: Type[C], table: str, map: dict[str, str], init: Callable[[C, Self], None] | None=None, store: Callable[[C, Self], None] | None=None, db: Self | None=None) -> Type[C]:
         """
         Register a class for database storage and retrieval
 
@@ -588,6 +598,8 @@ class Database:
                         # Stop init recursion
                         if '__in_init__' in self.__dict__:
                             del self.__dict__['__in_init__']
+                        # Update object in database
+                        db.store(self)
                 # Return wrapper
                 return _init_wp
 

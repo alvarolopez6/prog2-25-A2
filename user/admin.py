@@ -5,7 +5,6 @@ from db import SixerrDB, Database
 from .user import User
 
 @Database.register(
-    db=SixerrDB(),
     table='admins',
     map={}
 )
@@ -67,17 +66,25 @@ class Admin(User):
         username: str
             String with the username to be deleted
         """
-        Post.posts.pop(username, None)
+        del User.usuarios[username]
 
     def export_user_pdf(self, tempdir: str) -> str:
-        pass
+        """
+        Export the user data to a PDF file.
 
-    @classmethod
-    def import_user_csv(cls, path: str | Path) -> Self:
-        pass
+        Creates a PDF document containing the user's data and saves it in the specified
+        temporary directory.
 
-    @classmethod
-    def import_user_xml(cls, path: str | Path) -> Self:
+        Parameters
+        ----------
+        tempdir : str
+            Path to the temporary directory where the PDF file will be saved.
+
+        Returns
+        -------
+        str
+            Path to the generated PDF file.
+        """
         pass
 
     @staticmethod
@@ -95,3 +102,4 @@ class Admin(User):
         for i in Post.posts[post_autor]:
             if i.title == post_name:
                 Post.posts[post_autor].discard(i)
+                break

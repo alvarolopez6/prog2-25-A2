@@ -247,37 +247,3 @@ class XMLFile(Exportable, Importable):
                 ET.SubElement(tree, key, {'DataType': datatype}).text = str(value)
         self.tree.write(self.path.absolute, encoding='utf-8', xml_declaration=True)
         return self.path.absolute
-
-
-# Tests
-if __name__ == '__main__':
-    from post.demand import Demand
-    from post.offer import Offer
-
-    # XML for Users
-    f = XMLFile('../data/XMLTest.xml')
-    f.gen_tree('SixerrData')
-    print(f.write({'type': 'Consumer', 'username': 'Juanpe777', 'nombre': 'Juan Pérez',
-             'email': 'juanpe77@gmail.com', 'telefono': '+34 123 456 789',
-             'posts': {Demand('Title1', 'Ejdesc', 'User1').title,
-                       Demand('Title2', 'Ejdesc', 'User2').title,
-                       Demand('Title3', 'Ejdesc', 'User3').title},
-             'metodo_de_pago': 'Paypal',
-             'pocket': 122,
-             'servicios_contratados': {Offer('Title1', 'Ejdesc', 'User1').title,
-                                       Offer('Title2', 'Ejdesc', 'User2').title,
-                                       Offer('Title3', 'Ejdesc', 'User3').title}}))
-    f.indent()
-    for k, v in f.read().items():
-         print(f'Key: {k}, Value: {v}, ValueType: {type(v)}')
-
-    print('\n')
-
-    # XML for Posts
-    f2 = XMLFile('../data/XMLTestPost.xml')
-    f2.gen_tree('SixerrData')
-    print(f2.write({'type': 'Demand', 'title': 'Titulo1', 'description': 'Ejdesc1', 'user': 'Juanpe777',
-                   'urgency': 3, 'publication_date': '25/05/2025', 'category': 'Clases particulares'}))
-    f2.indent()
-    for k,v in f2.read().items():
-        print(f'Key: {k}, Value: {v}, ValueType: {type(v)}')

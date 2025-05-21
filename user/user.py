@@ -17,17 +17,16 @@ except ImportError:
 
 modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
 
-def _init(self, _) -> None:
+def _init(_self, _) -> None:
     """
     Initializes the object instance when created externally
 
     In the process of external creation the object gets infused with data and outside initialized.
     """
-    User.usuarios[self._username] = self
-    self.__dict__['posts']: set[Post] = set()
+    User.usuarios[_self._username] = _self
+    _self.__dict__['posts']: set[Post] = set()
 
 @Database.register(
-    db=SixerrDB(),
     table='users',
     map={
         'username': '_username',
@@ -109,36 +108,82 @@ class User(ABC):
     def __str__(self) -> str:
         return self.mostrar_info()
 
-    """
-    def __setattr__(self, key, value):
-        self.__dict__[key] = value
-        if key in type(self).__db__['__map__'].values():
-            if self in type(self).usuarios:
-                db.SixerrDB().store(self)
-    """
+
     @property
     def username(self):
+        """
+        Get the username of the user.
+
+        Returns
+        -------
+        str
+            The user's username.
+        """
         return self._username
 
     @property
     def get_telefono(self):
+        """
+        Get the user's phone number.
+
+        Returns
+        -------
+        str or None
+            The user's phone number as a string of 9 digits, or None if not set.
+        """
         return self.telefono
 
     @get_telefono.setter
     def get_telefono(self, value):
-        if not((value is None) or ((type(value) == str) and (len(value) == 9) and (value.isdigit()))):
+        """
+        Set the user's phone number.
+
+        Validates that the phone number is either None or a string of exactly 9 digits.
+        Raises a ValueError otherwise.
+
+        Parameters
+        ----------
+        value : str or None
+            The phone number to set.
+
+        Raises
+        ------
+        ValueError
+            If the phone number is not None and does not consist of exactly 9 digits.
+        """
+        if not ((value is None) or (type(value) == str and len(value) == 9 and value.isdigit())):
             raise ValueError('El telefono debe ser un numero')
         else:
             self.telefono = value
 
-
     @classmethod
     def get_user(cls, username: str):
+        """
+        Retrieve a user instance by username from the class-level user dictionary.
+
+        Parameters
+        ----------
+        username : str
+            The username to look up.
+
+        Returns
+        -------
+        User or None
+            The user instance if found, otherwise None.
+        """
         if username in cls.usuarios:
             return cls.usuarios[username]
 
     @property
     def password(self):
+        """
+        Get the user's password.
+
+        Returns
+        -------
+        str
+            The user's password (probably hashed).
+        """
         return self._password
 
     @password.setter
@@ -326,7 +371,7 @@ class User(ABC):
 
     def export_user(self) -> str:
         """
-        Gets user's info and exports it to a CSV file.
+        Gets user's info and exports it to a ZIP file with a .csv, .pdf, and .xml files inside.
 
         Returns
         -------
@@ -356,15 +401,6 @@ class User(ABC):
 
         return zip_file.absolute
 
-    @classmethod
-    @abstractmethod
-    def import_user_csv(cls, path: str | Path) -> Self:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def import_user_xml(cls, path: str | Path) -> Self:
-        pass
 
     def mostrar_info(self) -> str:
         """

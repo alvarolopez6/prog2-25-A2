@@ -258,6 +258,11 @@ def main() -> None:
     def forzar_borrar_post():
         # Borrar un post
         r = requests.delete(f'')
+        r = requests.delete(f'{URL}/admin/post?user={input("INTRODUZCA EL USUARIO DEL OWNER DEL POST: ")}'
+                            f'&titulo={input("INTRODUCE EL TITULO DEL POST ")}',
+                            headers={'Authorization': 'Bearer ' + token if token else ''})
+        print(r.status_code)
+        print(r.text)
 
     def cancelar_un_contrato():
         # Cancelar Un Contrato
@@ -270,11 +275,11 @@ def main() -> None:
         print(r.text)
     
     def depositar_dinero():
-        # Dipositar Dinero
+        # Depositar Dinero
         r = requests.put(
             f'{URL}/money?number={input("INTRODUZCA EL NUMERO DE TARJETA: ")}'
             f'&cvv={input("INTRODUZCA EL CVV: ")}'
-            f'&exp={input("INTRODUCA EL EXP: ")}',
+            f'&exp={input("INTRODUCA EL EXP: ")}'
             f'&quantity={input("INTRODUCA LA CANTIDAD: ")}',
             headers={'Authorization': 'Bearer ' + token if token else ''}
         )
@@ -305,8 +310,8 @@ def main() -> None:
                     print("5- Ver todos los posts publicados")
                     print("6- Iniciar Feed")
                     print("7- Depositar Dinero En Cuenta")
-                    print("8- Exportar perfil actual a CSV")
-                    print("9- Exportar post a CSV")
+                    print("8- Exportar perfil actual")
+                    print("9- Exportar post")
                     print("10- Cambiar el metodo de pago (Consumer)")
                     print("11- Contratar Servicio (Consumer)")
                     print("12- Ver servicios contratados (Consumer)")
@@ -375,8 +380,8 @@ def main() -> None:
                     print("5- Ver todos los posts publicados")
                     print("6- Iniciar feed")
                     print("7- Dipositar Dinero")
-                    print("8- Exportar perfil actual a CSV")
-                    print("9- Exportar post a CSV")
+                    print("8- Exportar perfil actual")
+                    print("9- Exportar post")
                     print("10- Publicar Offer (Freelancer)")
                     print("11- Ver tus posts publicados(Freelancer)")
                     print("12- Borrar Post (Freelancer)")
@@ -440,8 +445,8 @@ def main() -> None:
                     print("4- Cambiar el password")
                     print("5- Ver todos los posts publicados")
                     print("6- Iniciar feed")
-                    print("7- Exportar perfil actual a CSV")
-                    print("8- Exportar post a CSV")
+                    print("7- Exportar perfil actual")
+                    print("8- Exportar post")
                     print("9- Forzar Borrar Una Cuenta (Admin)")
                     print("10- Forzar borrado de una publicación")
                     print("11- Cerrar Session")

@@ -1,8 +1,22 @@
 from typing import Optional, Self
 from .generic_posts import Post
-from file_utils import CSVFile, Path, PDFFile, PDFOffer, XMLFile
+from file_utils import CSVFile, Path, PDFFile, PDFOffer
+from db import Database, SixerrDB
 
+def _init(_self: 'Offer', db: Database) -> None:
+    """
+    Initializes the object instance when created externally
 
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
+    type(_self).offer_feed[_self.title] = {"type": "offer", "description": _self.description,
+                                         "user": _self.user, "price": _self.price, 'category': _self.category}
+
+@Database.register(
+    table='offer',
+    map={'price':'price'},
+    init=_init
+)
 class Offer(Post):
     """
     Class representing an offer, inheriting from Publication.
@@ -41,6 +55,14 @@ class Offer(Post):
                                              "user": self.user, "price": self.price, 'category': self.category}
 
     def add_category(self, category: str) -> None:
+        """
+        Adds a category to the offer, using super().add_category, also adds the category to 'offer_feed'.
+        
+        Parameters
+        ----------
+        category : str
+            Category to be added.
+        """
         super().add_category(category)
         type(self).offer_feed[self.title]['category'] = category
 
@@ -74,16 +96,6 @@ class Offer(Post):
 
         return obj
 
-    @classmethod
-    def import_post_xml(cls, path: str | Path) -> Self:
-        f = XMLFile(path)
-        obj = cls.__new__(cls)
-        for key, value in f.read().items():
-            if key == 'type' and value != 'Offer':
-                raise NotImplementedError('Post type is not Offer')
-            setattr(obj, key, value)
-
-        return obj
 
     def export_post_pdf(self, tempdir) -> str:
         f = PDFFile(f'{tempdir}/Post.pdf')
@@ -110,7 +122,3 @@ class Offer(Post):
         """
         base_info = super().display_information()
         return f'{base_info}\nPrice: {self.price}'
-
-if __name__ == '__main__':
-    a =  Offer('Titulo1', 'DescEj', 'lunes', None, 50)
-    a.export_post_csv('../data/')

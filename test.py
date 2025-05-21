@@ -11,7 +11,7 @@ z = Consumer('Consumer', 'Consumer', 'alvaro', 'unai@gmail.com', -1)
 from db import SixerrDB
 
 db = SixerrDB()
-db.init()
+db.sinit()
 
 db.store(x)
 db.store(y)
