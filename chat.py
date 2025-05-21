@@ -22,6 +22,7 @@ def database_decorator(func):
 
 
 class Chat(ChatUser):
+    @database_decorator
     def __init__(self, user1: User, user2: User, msg: str) -> None:
         if not isinstance(user1,User) or not isinstance(user2,User) or not isinstance(msg,str):
             raise TypeError('Incorrect type of arguments')
