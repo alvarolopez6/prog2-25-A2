@@ -36,7 +36,7 @@ class RestrictionPermission(Exception):
 
 class App:
     def __init__(self) -> None:
-        self.flask = Flask('sixerr')
+        self.flask = Flask(__name__)
         self.db = SixerrDB()
         self.db.sinit()
         # Retrieve users
@@ -57,8 +57,8 @@ class App:
         #    self.db.store(user)
         pass
 
-    def start(self):
-        self.flask.run()
+    def run(self, *args, **kwargs):
+        self.flask.run(*args, **kwargs)
         self.close()
 
 app = App()
@@ -818,5 +818,3 @@ def admin_delete_post() -> tuple[str, int]:
 
     except RestrictionPermission as e:
         return str(e), 401
-
-app.start()
