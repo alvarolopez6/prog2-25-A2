@@ -216,7 +216,7 @@ class Post(ABC):
         funcs = [self.export_post_csv, self.export_post_pdf, self.export_post_xml]
         proccess: list[mp.Process] = []
 
-        temp_dir = tempfile.gettempdir()
+        temp_dir = 'data/'
 
         for f in funcs:
             p = mp.Process(target=f, args=(temp_dir,))

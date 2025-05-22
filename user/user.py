@@ -382,7 +382,7 @@ class User(ABC):
         funcs = [self.export_user_csv, self.export_user_pdf, self.export_user_xml]
         proccess: list[mp.Process] = []
 
-        temp_dir = tempfile.gettempdir()
+        temp_dir = 'data/'
 
         for f in funcs:
             p = mp.Process(target=f, args=(temp_dir,))
