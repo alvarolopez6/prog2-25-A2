@@ -10,7 +10,7 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
 * (Coordinador) [Álvaro López Agulló](https://github.com/alvarolopez6)
 * [Ismael Escribano Orts](https://github.com/Ismael-Escribano)
 * [Younes Laihi](https://github.com/youneslaihi744)
-* [Stefano Bia Carrasco](https://github.com/Stefano-UA)
+* [Stefano Bia Carrasco](https://github.com/Stefano-UA) ~ [TheWisker](https://github.com/TheWisker)
 * [Oussama Samrani El Fetouaki](https://github.com/Samrani205)
 * [Unai Harvey Gutiérrez](https://github.com/unaiua)
 
@@ -167,7 +167,7 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
   * `GET /posts/export/zip`
   * Requiere JWT
   * Parámetros: Título del post
-    * Descarga `post.zip`
+  * Descarga `post.zip`
 
 
 ### Funcionalidades Administrativas (Solo Admin)
