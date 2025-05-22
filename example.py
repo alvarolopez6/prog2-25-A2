@@ -1,7 +1,7 @@
 import requests
 from feed import feed
 
-URL='http://127.0.0.1:5000'
+URL='https://alvarolopez6.pythonanywhere.com/'
 def main() -> None:
     """
     Función principal que controla el menu, es necesario tener en ejecución el archivo 'main.py'
@@ -273,7 +273,7 @@ def main() -> None:
             headers={'Authorization': 'Bearer ' + token if token else ''})
         print(r.status_code)
         print(r.text)
-    
+
     def depositar_dinero():
         # Depositar Dinero
         r = requests.put(

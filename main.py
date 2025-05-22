@@ -58,7 +58,7 @@ class App:
         pass
 
     def start(self):
-        self.flask.run(debug=True)
+        self.flask.run()
         self.close()
 
 if __name__ == '__main__':
