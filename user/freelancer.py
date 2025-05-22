@@ -29,6 +29,7 @@ def _store(_self, db) -> None:
         db.store(demanda)
 
 @Database.register(
+    db=SixerrDB(),
     table='freelancers',
     map={
         'rating':'rating',
@@ -120,8 +121,7 @@ class Freelancer(User):
 
         """
         self.opiniones.append(resenya)
-        print("HAS AÑADIDO LA RESEÑA CON")
-        self.rating = sum(self.opiniones) / len(self.opiniones)
+        self.rating = sum(map(lambda x:float(x),self.opiniones)) / len(self.opiniones)
 
     def mostrar_info(self) -> str:
         """

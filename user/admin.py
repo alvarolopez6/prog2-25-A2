@@ -5,6 +5,7 @@ from db import SixerrDB, Database
 from .user import User
 
 @Database.register(
+    db=SixerrDB(),
     table='admins',
     map={}
 )

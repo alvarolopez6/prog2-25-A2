@@ -27,6 +27,7 @@ def _init(_self, _) -> None:
     _self.__dict__['posts']: set[Post] = set()
 
 @Database.register(
+    db=SixerrDB(),
     table='users',
     map={
         'username': '_username',

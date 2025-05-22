@@ -13,6 +13,7 @@ def _init(_self: 'Offer', db: Database) -> None:
                                          "user": _self.user, "price": _self.price, 'category': _self.category}
 
 @Database.register(
+    db=SixerrDB(),
     table='offer',
     map={'price':'price'},
     init=_init
@@ -57,7 +58,7 @@ class Offer(Post):
     def add_category(self, category: str) -> None:
         """
         Adds a category to the offer, using super().add_category, also adds the category to 'offer_feed'.
-        
+
         Parameters
         ----------
         category : str

@@ -24,6 +24,7 @@ def _store(_self: 'Consumer', db: Database) -> None:
         db.store(servicio)
 
 @Database.register(
+    db=SixerrDB(),
     table='consumers',
     map={'payment':'metodo_de_pago'},
     init=_init, store=_store

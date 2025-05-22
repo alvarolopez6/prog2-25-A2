@@ -30,6 +30,7 @@ def _init(_self: 'Post', db: Database) -> None:
 
 
 @Database.register(
+    db=SixerrDB(),
     table='posts',
     map={
         'username':'user',

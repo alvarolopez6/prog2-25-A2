@@ -13,6 +13,7 @@ def _init(_self: 'Demand', db: Database) -> None:
                                           'user': _self.user, 'urgency': _self.urgency, 'category': _self.category}
 
 @Database.register(
+    db=SixerrDB(),
     table='demand',
     map={'urgency':'urgency'},
     init=_init

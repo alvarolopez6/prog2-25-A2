@@ -38,48 +38,11 @@ class App:
     def __init__(self) -> None:
         self.flask = Flask('sixerr')
         self.db = SixerrDB()
-        self.db.init()
-
-        self.to_delete = set()
-        self.to_delete_posts = set()
-
-
+        self.db.sinit()
         # Retrieve users
-        for utype in (Consumer, Freelancer):
+        for utype in (Admin, Consumer, Freelancer):
             for user in self.db.retrieve(utype):
                 User.usuarios[user._username]=user
-                print('\n')
-                print('USERNAME: ', user._username)
-                match type(user):
-                    case _user.Consumer:
-                        for usuario in user.servicios_contratados:
-                            print('---->', usuario.title)
-                    case _user.Freelancer:
-                        for usuario in user.demandas_contratadas:
-                            print('---->', usuario.title)
-                    case _:
-                        print('ERROR: ', type(user))
-
-        print(User.usuarios)
-
-        x = Admin('Admin', 'Admin', '12', 'cr7@messi.com', '656565888')
-        y = Freelancer('Freelancer','Ismael', '12', 'younes@gmail.com', -1, opiniones=[9,8,6])
-        z = Consumer('Consumer', 'Consumer', '12', 'unai@gmail.com', -1)
-
-        off = Offer('Oferta1', 'DescOferta', 'Consumer', None, 99.99)
-        off1 = Offer('Oferta2', 'DescOferta22', 'Consumer', None, 99)
-        dem = Demand('Demanda1', 'DescDemanda', 'Freelancer', None, 4)
-        dem1 = Demand('Demanda2', 'DescDemanda', 'Freelancer', None, 4)
-
-        y.demandas_contratadas.add(dem)
-        y.demandas_contratadas.add(dem1)
-
-        z.servicios_contratados.add(off)
-        z.servicios_contratados.add(off1)
-
-        #self.db.store(x)
-        #self.db.store(y)
-        #self.db.store(z)
 
         self.flask.config["JWT_SECRET_KEY"] = "super-secret"
         self.jwt = JWTManager(self.flask)
@@ -88,32 +51,11 @@ class App:
         self.close()
 
     def close(self) -> None:
-        print('X')
-        # Delete users
-        for user in self.to_delete:
-            match type(user):
-                case _user.Consumer:
-                    posts = user.servicios_contratados
-                case _user.Freelancer:
-                    posts = user.demandas_contratadas
-                case _:
-                    posts = []
-            for post in posts:
-                self.db.delete(post)
-            self.db.delete(user)
-        print(self.to_delete_posts)
-        # Delete posts
-        for post in self.to_delete_posts:
-            print('Z')
-            try:
-                self.db.query('DELETE FROM posts WHERE username=? AND title=?', (post.user, post.title))
-            except Exception as e:
-                print(e)
-                pass
+        # -> We dont do it as they get saved on creation and edit
         # Store users
-        for user in User.usuarios.values():
-            print('Y')
-            self.db.store(user)
+        #for user in User.usuarios.values():
+        #    self.db.store(user)
+        pass
 
     def start(self):
         self.flask.run(debug=True)
@@ -258,7 +200,15 @@ if __name__ == '__main__':
             if User.usuarios[usuario].posts:
                 return f'No se ha Borrado Tu cuenta Debido a que tienes posts',409
             else:
-                app.to_delete.add(User.usuarios[usuario]) # El thread de flask no deja acceder a sqlite
+                app.db.delete(User.usuarios[usuario])
+                suser = User.usuarios[usuario]
+                match type(suser):
+                    case _user.Consumer:
+                        for post in suser.servicios_contratados:
+                            app.db.delete(post)
+                    case _user.Freelancer:
+                        for post in suser.demandas_contratadas:
+                            app.db.delete(post)
                 del User.usuarios[usuario]
                 return f'Se ha borrado tu cuenta de forma correcta',200
         except Exception as e:
@@ -478,7 +428,7 @@ if __name__ == '__main__':
         if current_user in Post.posts:
             for post in Post.posts[current_user]:
                 if post.title == titulo:
-                    app.to_delete_posts.add(post) # El thread de flask no deja acceder a sqlite
+                    app.db.delete(post)
                     Post.posts[current_user].remove(post)
                     if isinstance(post, Offer):
                         del Offer.offer_feed[post.title]
