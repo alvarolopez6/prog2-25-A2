@@ -118,7 +118,7 @@ class Consumer(User):
         str
             Absolute path to the generated PDF file.
         """
-        f = PDFFile(f'{tempdir}/Post.pdf')
+        f = PDFFile(f'{tempdir}/User.pdf')
         pdf_content = PDFConsumer(
             username=self.username,
             nombre=self.nombre,
