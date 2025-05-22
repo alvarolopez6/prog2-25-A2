@@ -12,6 +12,7 @@ from post.offer import Offer
 from post.generic_posts import Post
 from db import SixerrDB
 import user as _user
+from chat import Chat
 
 class WrongPass(Exception):
     """
@@ -819,5 +820,7 @@ if __name__ == '__main__':
 
         except RestrictionPermission as e:
             return str(e), 401
+
+
 
     app.start()
