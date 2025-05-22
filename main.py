@@ -1,15 +1,17 @@
-from flask import Flask, request, send_file, Response
+from flask import Flask, request, send_file, Response, jsonify
 from flask_jwt_extended import (JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt)
 
-
+from post.demand import Demand
 from user import User
-from freelancer import Freelancer
-from consumer import Consumer
-from crypto import hash_str
+from user.admin import Admin
+from user.freelancer import Freelancer
+from user.consumer import Consumer
+from utils.crypto import hash_str
 from typing import Any, Union
-from offer import Offer
-from generic_posts import Post
-#from database import SixerrDB
+from post.offer import Offer
+from post.generic_posts import Post
+from db import SixerrDB
+import user as _user
 
 class WrongPass(Exception):
     """
@@ -32,43 +34,35 @@ class RestrictionPermission(Exception):
         return f'No puedes Realizar esta tarea debido a que eres : {self.tipo}'
 
 
-"""
-class DBError(Exception):
-    def __init__(self, name: str, *args):
-        self.name = name
-    def __str__(self):
-        return f'Couldn\'t start database {self.name}'
-"""
-
 class App:
-    def __init__(self):
+    def __init__(self) -> None:
         self.flask = Flask('sixerr')
-        """
-        self.db = SixerrDB({})
-        for user in self.db.retrieve(Freelancer):
-            User.usuarios[user.username]=user
-        for user in self.db.retrieve(Consumer):
-            User.usuarios[user.username]=user
-        """
+        self.db = SixerrDB()
+        self.db.sinit()
+        # Retrieve users
+        for utype in (Admin, Consumer, Freelancer):
+            for user in self.db.retrieve(utype):
+                User.usuarios[user._username]=user
+
         self.flask.config["JWT_SECRET_KEY"] = "super-secret"
         self.jwt = JWTManager(self.flask)
-    """
-    def __del__(self):
-        ...
-    """
+
+    def __del__(self) -> None:
+        self.close()
+
+    def close(self) -> None:
+        # -> We dont do it as they get saved on creation and edit
+        # Store users
+        #for user in User.usuarios.values():
+        #    self.db.store(user)
+        pass
+
     def start(self):
         self.flask.run(debug=True)
-        """
-        if not self.db.init():
-            raise DBError(self.db.name)
-        for user in self.db.get_users():
-            self.users[user['id']] = User.from_dict(user)
-        """
+        self.close()
 
 if __name__ == '__main__':
     app = App()
-    Freelancer("Lancer","Lancer","Lancer","Lancer")
-    Consumer("Consum","Consum","Consum","Consum")
 
     @app.flask.route('/signup', methods=['POST'])
     def signup() -> tuple[str, int]:
@@ -115,7 +109,7 @@ if __name__ == '__main__':
     revoked_tokens = set()
 
     @app.flask.route('/login', methods=['GET'])
-    def login() -> tuple[Union[str, dict[str, Any]], int]:
+    def login() -> tuple[str, int]:
         """
         Realizes user's login and generates JWT token
 
@@ -132,7 +126,9 @@ if __name__ == '__main__':
         usuario=request.args.get('usuario')
         password=request.args.get('password')
         if usuario in User.usuarios.keys() and User.usuarios[usuario].password==hash_str(password):
-            return create_access_token(identity=usuario),200
+            status_code = 200 if isinstance(User.usuarios[usuario], Consumer) \
+                else 201 if isinstance(User.usuarios[usuario], Freelancer) else 202
+            return create_access_token(identity=usuario), status_code
         else:
             return "Usuario o contraseña incorrectos",401
 
@@ -204,10 +200,19 @@ if __name__ == '__main__':
             if User.usuarios[usuario].posts:
                 return f'No se ha Borrado Tu cuenta Debido a que tienes posts',409
             else:
-                ### db.delete(User.usuarios[usuario])
+                app.db.delete(User.usuarios[usuario])
+                suser = User.usuarios[usuario]
+                match type(suser):
+                    case _user.Consumer:
+                        for post in suser.servicios_contratados:
+                            app.db.delete(post)
+                    case _user.Freelancer:
+                        for post in suser.demandas_contratadas:
+                            app.db.delete(post)
                 del User.usuarios[usuario]
                 return f'Se ha borrado tu cuenta de forma correcta',200
-        except:
+        except Exception as e:
+            print(e)
             return f'Se Ha producido un error',404
 
 
@@ -306,7 +311,7 @@ if __name__ == '__main__':
         """
         return jwt_payload["jti"] in revoked_tokens
 
-    @app.flask.route('/posts/offers', methods=['POST'])
+    @app.flask.route('/posts', methods=['POST'])
     @jwt_required()
     def publicar_offer() -> tuple[str, int]:
         """
@@ -326,23 +331,15 @@ if __name__ == '__main__':
         usuario=User.usuarios[current_user]
         titulo=request.args.get('titulo')
         description=request.args.get('description')
-        precio = request.args.get('price')
         try:
-            """
             if isinstance(usuario, Freelancer):
-                Offer(title=titulo, description=description, user=current_user, price=int(request.args.get('price')))
+                Offer(title=titulo, description=description, user=current_user, price=float(request.args.get('price')))
+                return f'Se Ha Publicado tu Offer de forma Correcta', 200
             elif isinstance(usuario, Consumer):
-                Demand(title=titulo, description=description, user=current_user)
+                Demand(title=titulo, description=description, user=current_user, urgency=int(request.args.get('urgency')))
+                return f'Se Ha Publicado tu Demanda de forma Correcta', 200
             else:
                 raise RestrictionPermission(type(usuario).__name__)
-            return f'Se Ha Publicado tu post de forma Correcta', 200
-            """
-            if isinstance(usuario, Freelancer):
-                Offer(title=titulo, description=description, user=current_user, price=precio)
-                return f'Se Ha Publicado tu post de forma Correcta', 200
-            else:
-                raise RestrictionPermission(type(usuario).__name__)
-
         except RestrictionPermission as restricted:
             return f'{restricted}', 401
         except ValueError:
@@ -387,6 +384,32 @@ if __name__ == '__main__':
         else:
             return f'User {current_user} no tiene posts en este momento', 404
 
+
+    @app.flask.route('/posts/category', methods=['POST'])
+    @jwt_required()
+    def add_category() -> tuple[str, int]:
+        """
+        Adds Category to own Posts. Requieres a JWT Token.
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Category Added
+                - 404: User has no posts, has no post with that title
+        """
+        current_user = get_jwt_identity()
+        titulo = request.args.get('titulo')
+        category = request.args.get('categoria')
+        try:
+            if current_user in Post.posts:
+                post_category=Post.get_post(current_user,titulo)
+                post_category.add_category(category)
+                return f'La Categoria {category} fue agregada de forma exitosa',200
+            return f'User {current_user} no tiene posts', 404
+        except ValueError as e:
+            return f'{e}',404
+
     @app.flask.route('/posts/user', methods=['DELETE'])
     @jwt_required()
     def borrar_propias_publicaciones() -> tuple[str, int]:
@@ -405,8 +428,12 @@ if __name__ == '__main__':
         if current_user in Post.posts:
             for post in Post.posts[current_user]:
                 if post.title == titulo:
+                    app.db.delete(post)
                     Post.posts[current_user].remove(post)
-
+                    if isinstance(post, Offer):
+                        del Offer.offer_feed[post.title]
+                    else:
+                        del Demand.demand_feed[post.title]
                     if not Post.posts[current_user]:
                         del Post.posts[current_user]
 
@@ -438,8 +465,17 @@ if __name__ == '__main__':
                 user = User.usuarios[current_user]
 
                 if isinstance(user, Consumer) and isinstance(User.usuarios[tuser], Freelancer):
-                    user.servicios_contratados.add(Post.get_post(tuser, titulo))
-                    return f'Added post {tuser}>{titulo} to user {current_user}', 200
+                    post = Post.get_post(tuser, titulo)
+                    if isinstance(post, Offer):
+                        user.servicios_contratados.add(post)
+                        if user.money >= post.price:
+                            user.money -= post.price
+                            User.usuarios[tuser].money += post.price
+                            return f'Added post {tuser}>{titulo} to user {current_user}', 200
+                        else:
+                            return 'No tienes suficiente saldo', 401
+                    else:
+                        return 'La oferta no existe', 404
                 else:
                     return 'Tienes que ser Consumer y el usuario Freelancer', 401
             else:
@@ -473,9 +509,9 @@ if __name__ == '__main__':
         except RestrictionPermission as rest:
             return f'{rest}',401
 
-    @app.flask.route('/usuario/export', methods=['GET'])
+    @app.flask.route('/usuario/export/csv', methods=['GET'])
     @jwt_required()
-    def exportar_perfil() -> tuple[Union[Response, int], int]:
+    def exportar_perfil_csv() -> tuple[Union[Response, int], int]:
         """
         Exports the user's information into a CSV file.
 
@@ -487,14 +523,128 @@ if __name__ == '__main__':
         """
         current_user = get_jwt_identity()
         user = User.usuarios[current_user]
+        return send_file(user.export_user_csv('data/')), 200
+
+    @app.flask.route('/usuario/export/pdf', methods=['GET'])
+    @jwt_required()
+    def exportar_perfil_pdf() -> tuple[Union[Response, int], int]:
+        """
+       Exports the user's information into a PDF file.
+
+       Returns
+       -------
+       Tuple[Union[Response, int], int]
+           (File, status_code) tuple. Status code can be:
+               - 200: File sended
+       """
+        current_user = get_jwt_identity()
+        user = User.usuarios[current_user]
+        return send_file(user.export_user_pdf('data/')), 200
+
+
+    @app.flask.route('/usuario/export/xml', methods=['GET'])
+    @jwt_required()
+    def exportar_perfil_xml() -> tuple[Union[Response, int], int]:
+        """
+        Exports a post's information by its title into an XML file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
+        current_user = get_jwt_identity()
+        user = User.usuarios[current_user]
+        return send_file(user.export_user_xml('data/')), 200
+
+
+    @app.flask.route('/usuario/export/zip', methods=['GET'])
+    @jwt_required()
+    def exportar_perfil_zip() -> tuple[Union[Response, int], int]:
+        """
+        Exports a post's information by its title into an XML file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
+        current_user = get_jwt_identity()
+        user = User.usuarios[current_user]
         return send_file(user.export_user()), 200
 
-
-    @app.flask.route('/posts/export', methods=['GET'])
+    @app.flask.route('/posts/export/csv', methods=['GET'])
     @jwt_required()
-    def exportar_post() -> tuple[Union[Response, int], int] | tuple[str, int]:
+    def exportar_post_csv() -> tuple[Union[Response, int], int] | tuple[str, int]:
         """
          Exports a post's information by its title into a CSV file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
+        current_user = get_jwt_identity()
+        titulo = request.args.get('titulo')
+        try:
+            post = Post.get_post(current_user, titulo)
+            return send_file(post.export_post_csv('data/')), 200 # A lo mejor hay que borrar el archivo después de enviarlo
+        except ValueError as e:
+            return f'{e}',404
+
+    @app.flask.route('/posts/export/pdf', methods=['GET'])
+    @jwt_required()
+    def exportar_post_pdf() -> tuple[Union[Response, int], int] | tuple[str, int]:
+        """
+         Exports a post's information by its title into a PDF file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
+        current_user = get_jwt_identity()
+        titulo = request.args.get('titulo')
+        try:
+            post = Post.get_post(current_user, titulo)
+            return send_file(post.export_post_pdf('data/')), 200 # A lo mejor hay que borrar el archivo después de enviarlo
+        except ValueError as e:
+            return f'{e}',404
+
+    @app.flask.route('/posts/export/xml', methods=['GET'])
+    @jwt_required()
+    def exportar_post_xml() -> tuple[Union[Response, int], int] | tuple[str, int]:
+        """
+         Exports a post's information by its title into a XML file.
+
+        Returns
+        -------
+        Tuple[Union[Response, int], int]
+            (File, status_code) tuple. Status code can be:
+                - 200: File sended
+                - 404: Post not found
+        """
+        current_user = get_jwt_identity()
+        titulo = request.args.get('titulo')
+        try:
+            post = Post.get_post(current_user, titulo)
+            return send_file(post.export_post_xml('data/')), 200 # A lo mejor hay que borrar el archivo después de enviarlo
+        except ValueError as e:
+            return f'{e}',404
+
+    @app.flask.route('/posts/export/zip', methods=['GET'])
+    @jwt_required()
+    def exportar_post_zip() -> tuple[Union[Response, int], int] | tuple[str, int]:
+        """
+         Exports a post's information by its title into a ZIP file.
 
         Returns
         -------
@@ -512,5 +662,162 @@ if __name__ == '__main__':
             return f'{e}',404
 
 
+    @app.flask.route('/admin', methods=['DELETE'])
+    @jwt_required()
+    def admin_user_delete() -> tuple[str, int]:
+        """
+        A Function that can be only used by Admin to delete any User Account even if he has posts publicated
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: String returned, Operation Completed
+                - 401: Restricted Permision (Only for Admins)
+        """
+        current_user = get_jwt_identity()
+        current_account=User.usuarios[current_user]
+        usertodelete = request.args.get('user')
+        try:
+            if not isinstance(current_account,Admin):
+                raise RestrictionPermission(type(current_account).__name__)
+            elif usertodelete not in User.usuarios:
+                return f'No Existe {usertodelete} en nuestra base de datos',404
+            else:
+                Admin.delete_user(usertodelete)
+                return f'The Account {usertodelete} Has been deleted',200
+        except RestrictionPermission as e:
+            return f'{e}', 401
+
+
+    @app.flask.route('/usuario/hire', methods=['DELETE'])
+    @jwt_required()
+    def cancelar_offer() -> tuple[str, int]:
+        """
+        Lets a Consumer Cancel a freelancer's offer. Requieres JWT Token (Consumer).
+
+        Gets from request arguments freelancer's user and post's title
+
+        Returns
+        -------
+        Tuple[str, int]
+            (message, status_code) tuple. Status code can be:
+                - 200: Offer Canceled
+                - 404: User does not exist, offer not found
+
+        """
+        current_user = get_jwt_identity()
+        tuser = request.args.get('tuser')
+        titulo = request.args.get('titulo')
+        valoracion= request.args.get('valoracion')
+        try:
+            if tuser in User.usuarios:
+                user = User.usuarios[current_user]
+
+                if isinstance(user, Consumer) and isinstance(User.usuarios[tuser], Freelancer):
+                    post_to_cancel=Post.get_post(tuser, titulo)
+                    if post_to_cancel in user.servicios_contratados:
+                        user.servicios_contratados.remove(post_to_cancel)
+                        User.usuarios[tuser].agregar_resenya(valoracion)
+                        return f'Offer of {tuser} -> {titulo} Has been deleted from user {current_user}', 200
+                    else:
+                        return f'No Tienes Contratado Este Post',404
+                else:
+                    return 'Tienes que ser Consumer y el usuario Freelancer', 401
+            else:
+                return 'El usuario que introduciste no esta en nuestros base de datos', 404
+        except ValueError as v:
+            return f'{v}', 404
+
+
+    @app.flask.route('/feed', methods=['GET'])
+    def feed() -> tuple[Response, int]:
+        """A function that returns a tuple contains dictionary and status code
+
+         Returns
+        -------
+        Tuple[dict, int]
+            (dict, status_code) tuple. Status code can be:
+                - 200: Operation succed
+
+        """
+        response = {**Offer.offer_feed, **Demand.demand_feed}
+        return jsonify(response), 200
+
+    @app.flask.route('/money', methods=['PUT'])
+    @jwt_required()
+    def deposit() -> tuple[str, int]:
+        """A function where you introduce your visa card information
+        and verifies if it is authentic in that case it deposit money
+        to the user virtual pocket
+
+         Returns
+        -------
+        Tuple[str, int]
+            (str, status_code) tuple. Status code can be:
+                - 200: Operation was successful
+                - 404: Visa Card Does Not Exist
+                - 409: Introduce valor incorrecto
+
+        """
+        current_user = get_jwt_identity()
+        user = User.usuarios[current_user]
+        visa_number=request.args.get('number')
+        visa_cvv=request.args.get('cvv')
+        visa_exp=request.args.get('exp')
+        try:
+            quantity=float(request.args.get('quantity'))
+            state=User.is_valid(visa_number, visa_exp, visa_cvv)
+
+            state_info = {0: 'Credit card is valid.',
+                          1: 'Credit card is expired, or introduced expiration date format is not valid.',
+                          2: 'CVV does not have 3 or 4 digits.',
+                          3: 'Card number or length is not valid.'}
+            state_str = state_info[state]
+            if state==0:
+                user.money+=quantity
+                return f'Se ha añadido {quantity} al usuario {current_user} de forma correcta', 200
+            else:
+                return state_str,404
+
+        except ValueError as e:
+            return f'{e}',409
+
+    @app.flask.route('/admin/post', methods=['DELETE'])
+    @jwt_required()
+    def admin_delete_post() -> tuple[str, int]:
+        """
+        Permite a un administrador eliminar un post específico de cualquier usuario.
+
+        Returns
+        -------
+        Tuple[str, int]
+            - 200: Post eliminado con éxito
+            - 401: Permiso denegado (no es admin)
+            - 404: Usuario o post no encontrado
+        """
+        current_user = get_jwt_identity()
+        current_account = User.usuarios.get(current_user)
+
+        user_target = request.args.get('user')
+        titulo = request.args.get('titulo')
+
+        try:
+            if not isinstance(current_account, Admin):
+                raise RestrictionPermission(type(current_account).__name__)
+            if user_target not in User.usuarios:
+                return f'No existe el usuario {user_target} en nuestra base de datos', 404
+            if not Post.get_post(user_target,titulo):
+                return f'El usuario {user_target} no tiene la publicación {titulo}', 404
+            else:
+                Admin.delete_post(user_target,titulo)
+                try:
+                    del Offer.offer_feed[titulo]
+                except Exception:
+                    del Demand.demand_feed[titulo]
+                return f'Se eliminó el post "{titulo}" de {user_target}', 200
+
+        except RestrictionPermission as e:
+            return str(e), 401
 
     app.start()

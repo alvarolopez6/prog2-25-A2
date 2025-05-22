@@ -7,10 +7,11 @@ Author: Ismael Escribano
 Creation Date: 29-03-2025
 """
 
+from typing import Sequence, Mapping
 from abc import ABC, abstractmethod
 from file_utils import Path
 
-class File(ABC):
+class File:
     """
     Abstract class for handling file operation
 
@@ -27,10 +28,8 @@ class File(ABC):
         Clears the file's data
     delete() -> None
         Deletes the file
-    read -> None
-        Reads the file's content (Must be implemented by subclasses)
-    write(content: str) -> None
-        Writes content into the file (Must be implemented by subclasses)
+    __str__() -> str
+        Returns the string representation of the file
     """
 
     def __init__(self, path: Path | str) -> None:
@@ -70,23 +69,52 @@ class File(ABC):
         if self.path.exists:
             self.path.path.unlink(missing_ok=True)
 
+    def __str__(self) -> str:
+        """
+        Returns file system path as string
+
+        Returns
+        -------
+        str
+            String representation of file's system path.
+        """
+        return f'System Path: {self.path.absolute}'
+
+
+class Exportable(ABC, File):
+    """
+    Abstract class for indicating an exportable file (can be written)
+
+    Methods
+    -------
+    write(content: str | Sequence | Mapping) -> None
+        Writes content into the file (Must be implemented by subclasses)
+    """
+    @abstractmethod
+    def write(self, content: str | Sequence | Mapping) -> None:
+        """
+        Writes content into the file (Must be implemented by subclasses)
+
+        Parameters
+        ----------
+        content : str | Sequence | Mapping (depends on subclass)
+             Content to be written into the file
+        """
+        pass
+
+class Importable(ABC, File):
+    """
+    Abstract class for indicating an importable file (can be read)
+
+    Methods
+    read() -> None
+        Reads the file's content (Must be implemented by subclasses)
+    """
     @abstractmethod
     def read(self) -> None:
         """
         Reads the file's content (Must be implemented by subclasses)
 
         NOTE: Subclasses must have 'data' attribute, otherwise this method should return a Sequence or str
-        """
-        pass
-
-    @abstractmethod
-    def write(self, content: str) -> None:
-        """
-        Writes content into the file (Must be implemented by subclasses)
-
-        Parameters
-        ----------
-        content : str
-            Content to be written into the file
         """
         pass
