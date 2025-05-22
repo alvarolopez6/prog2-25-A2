@@ -437,7 +437,7 @@ class PDFFile(Exportable):
         # Fecha de publicación
         type(self).change_font(new_font_size=8)
         height -= 7
-        self.__add_textline(Point(500, height), f'Fecha publicación: {content.publication_date.strftime("%d/%m/%Y")}',
+        self.__add_textline(Point(500, height), f'Fecha publicación: {content.publication_date}',
                             'right')
         height -= 20
         self.__draw_line(Point(75, height), Point(525, height))
@@ -493,7 +493,7 @@ class PDFFile(Exportable):
 
         # Fecha de publicación
         type(self).change_font(new_font_size=8)
-        self.__add_textline(Point(500, height), f'Fecha publicación: {content.publication_date.strftime("%d/%m/%Y")}',
+        self.__add_textline(Point(500, height), f'Fecha publicación: {content.publication_date}',
                             'right')
 
         # Urgencia

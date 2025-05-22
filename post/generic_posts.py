@@ -111,7 +111,7 @@ class Post(ABC):
         self.description = description
         self.user = user
         self.image = image
-        self.publication_date = str(datetime.now().date())
+        self.publication_date = datetime.now().date().strftime('%Y/%m/%d')
         self.category = None
 
         if user in Post.posts:
@@ -199,7 +199,7 @@ class Post(ABC):
         f = XMLFile(f'{tempdir}/Post.xml')
         f.gen_tree('SixerrData')
         data_dict = {'type': type(self).__name__, **self.__dict__,
-                     'publication_date': self.publication_date.strftime('%Y/%m/%d')}
+                     'publication_date': self.publication_date}
         f.write(data_dict)
         f.indent()
         return f.path.absolute
