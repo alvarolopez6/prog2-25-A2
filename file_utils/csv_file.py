@@ -11,7 +11,7 @@ from itertools import zip_longest
 from collections.abc import Sequence
 from typing import Self
 
-from file_utils import Path, File
+from file_utils import Path, Exportable, Importable
 
 
 class NoHeadersFound(Exception):
@@ -20,6 +20,7 @@ class NoHeadersFound(Exception):
     """
     def __str__(self) -> str:
         return 'Headers are not defined in CSV file. Use write_headers() to define them.'
+
 
 class NotEnoughColumns(Exception):
     """
@@ -34,7 +35,7 @@ class NotEnoughColumns(Exception):
         return f'Introduced {self.num_data} elements but CSV File has {self.num_col} columns'
 
 
-class CSVFile(File):
+class CSVFile(Exportable, Importable):
     """
     Class for handling Read and Write operations on CSV files.
 
@@ -55,7 +56,7 @@ class CSVFile(File):
         Writes a single row into a CSV file (headers must exist)
     write_rows(rows: Sequence[Sequence[str]]) -> None
         Writes multiple rows into a CSV file (headers must exist)
-    read -> None
+    read() -> bool
         Reads the CSV file if it exists
     clear() -> None
         Clears all the CSV file data, also resets 'data' and 'headers' attributes
@@ -143,9 +144,14 @@ class CSVFile(File):
                         row_dict[self.headers[i]] = None
                 writer.writerow(row_dict)
 
-    def read(self) -> None:
+    def read(self) -> bool:
         """
         Reads the CSV file if it exists, it appends CSV's data into 'self.data'
+
+        Returns
+        -------
+        bool
+            Returns True if the CSV file exists, False otherwise
         """
         self.data = []
         if self.path.exists:
@@ -157,7 +163,10 @@ class CSVFile(File):
                         self.headers = row
                         cont += 1
                     else:
-                        self.data.append(row)
+                        self.data = row
+                else:
+                    return True
+        return False
 
     def clear(self) -> None:
         """

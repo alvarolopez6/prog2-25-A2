@@ -21,17 +21,16 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
 ## Requisitos
 [//]: # (Indicad aquí los requisitos de vuestra aplicación, así como el alumno responsable de cada uno de ellos)
 * Se creará una base de datos de ámbito general. (Stefano)
-* Guardará la información de los usuarios (consumer, freelancer, admin), las publicaciones (oferta, demanda), las reseñas y los chats en una base de datos local. (Stefano)
-* Permitirá la creación de perfiles y la verificación de identidad de los mismos para distintos tipos de usuarios como consumers que contratan servicios, freelancers y admins.(Younes)
+* Guardará la información de los usuarios (consumer, freelancer, admin), las publicaciones (oferta, demanda) y las reseñas en una base de datos local. (Stefano)
+* Permitirá la creación de perfiles y la verificación de identidad de los mismos para distintos tipos de usuarios como consumers que contratan servicios, freelancers y admins. (Younes)
 * El freelancer tendrá la capacidad de subir publicaciones ofreciendo sus servicios y estas serán visibles para los usuarios. (Álvaro)
-* Implementación de un chat que permitirá la comunicación entre un freelancer y un consumidor.(Samrani)
-* Se dispondrá de un modelo ‘Feed’ en el que podremos ver de forma cómoda varias de las publicaciones. (Unai)
-* Se desarrollará un sistema de búsqueda que ayuda a encontrar los servicios necesitados a partir de palabras clave y filtrando por categorías. (Unai)
+* Se dispondrá de una funcionalidad que nos permitirá ver de forma cómoda varias de las publicaciones. (Unai)
+* Se desarrollará un sistema de búsqueda feed que ayuda a encontrar los servicios necesitados a partir de palabras clave y filtrando por categorías. (Unai)
 * Se creará un sistema de reseñas que permite a los consumers valorar la experiencia al contratar servicios con freelancers. (Younes)
-* Permitirá a los usuarios “Freelancer” entregar los trabajos pedidos de forma directa y recibir un pago a cambio. (Ismael)
-* Permitirá a los consumers subir demandas, es decir, es el usuario el que publica una necesidad y un freelancer lo contacta. (Álvaro)
+* Los freelancers recibirán pagos una vez que se contraten sus servicios. (Ismael)
+* Permitirá a los consumers subir demandas, es decir, es el usuario el que publica una necesidad y un freelancer puede crear su oferta. (Álvaro)
 * Permitirá la exportación de perfiles o publicaciones a diferentes formatos, como PDF, CSV o XML. (Ismael)
-* Permitirá la importación de publicaciones en formato CSV o XML. (Ismael)
+* Los administradores podrán borrar tanto perfiles como publicaciones en caso de considerarlo necesario.
 
 ## Instrucciones de instalación y ejecución
 * Crear venv con el fichero _requirements.txt_
@@ -40,77 +39,144 @@ Sixxer ofrece servicios para freelancers permitiendoles crear publicaciones ofre
 
 ## Resumen de la API
 
-### Autenticación
-* Login (Opción 1)
-  * GET /login
-  * Parámetros: Nombre de usuario, contraseña
-
-* Logout (Opción 8)
-  * DELETE /logout
-  * Requiere JWT
-
 ### Gestión de Usuarios
-* Registrar una nueva cuenta (Opción 3)
-  * POST /signup
-  * Parámetros: Nombre de usuario, Nombre, Contraseña, Email, tipo de cuenta
+* Registrar una nueva cuenta
+  * `POST /signup`
+  * Parámetros: Nombre de usuario, Nombre, Contraseña, Email, Tipo de cuenta (`Consumer` / `Freelancer`)
 
-* Actualizar Datos del usuario (Opción 2)
-  * PUT /usuario
+* Actualizar datos del usuario
+  * `PUT /usuario`
   * Requiere JWT
-  * Parámetros: Nombre, Email, teléfono
+  * Parámetros: Nombre, Email, Teléfono
 
-* Cambiar contraseña (Opción 6)
-  * PUT /password
+* Cambiar contraseña
+  * `PUT /password`
   * Requiere JWT
   * Parámetros: Contraseña antigua, Nueva contraseña
 
-* Cambiar método de pago, solo Consumers (Opción 7)
-  * PUT /metodo_pago
+* Cambiar método de pago, solo Consumers
+  * `PUT /metodo_pago`
   * Requiere JWT (Consumer)
-  * Parámetros: Método de pago
+  * Parámetros: Método de pago (`1`=VISA, `2`=Paypal, `3`=AmEx, `4`=Pocket, `5`=Paysera)
 
-* Borrar cuenta actual (Opción 5)
-  * DELETE /usuario
+* Depositar dinero en la cuenta de uno mismo
+  * `PUT /money`
+  * Requiere JWT
+  * Parámetros: cantidad de dinero
+
+* Borrar cuenta actual
+  * `DELETE /usuario`
   * Requiere JWT
 
-### Gestión de publicaciones
-* Publicar Oferta(Post), solo Freelancer (Opción 9)
-  * POST /posts/offers
+
+### Autenticación
+* Iniciar sesión
+  * `GET /login`
+  * Parámetros: Nombre de usuario, Contraseña
+  * Devuelve JWT y tipo de usuario (Consumer, Freelancer o Admin)
+
+* Cerrar sesión
+  * `DELETE /logout`
+  * Requiere JWT
+
+
+### Publicaciones y Posts
+* Ver todos los posts
+  * `GET /posts`
+  * Público
+
+* Publicar un nuevo post (Freelancer)
+  * `POST /posts/offers`
   * Requiere JWT (Freelancer)
-  * Parámetros: Titulo, descripción, precio
+  * Parámetros: Título, Descripción, Precio
 
-* Borrar post por título (Opción 12)
-  * DELETE /posts/user
+* Ver mis publicaciones (Freelancer)
+  * `GET /posts/user`
   * Requiere JWT
-  * Parámetros: Titulo
 
-### Contratación servicios
-* Contratar Oferta, solo Consumer (Opción 13)
-  * POST /usuario/hire
+* Borrar una publicación propia (Freelancer)
+  * `DELETE /posts/user`
+  * Requiere JWT
+  * Parámetros: Título del post
+
+* Añadir categoría a una publicación (Freelancer)
+  * `POST /posts/category`
+  * Requiere JWT
+  * Parámetros: Título del post, Categoría
+
+* Feed que permite ver y filtrar publicaciones
+  * `GET /feed`
+
+
+### Contrataciones (Solo Consumers)
+* Contratar un servicio
+  * `POST /usuario/hire`
   * Requiere JWT (Consumer)
-  * Parámetros: Usuario Freelancer, Titulo post
+  * Parámetros: Usuario del freelancer, Título del post
 
-### Exportación y obtención de datos
-* Mostrar datos del usuario actual (Opción 4)
-  * GET /usuario
-  * Requiere JWT
-
-* Ver todos los posts publicados (Opción 10)
-  * GET /posts
-
-* Ver posts publicados (Opción 11)
-  * GET /posts/user
-  * Requiere JWT
-
-* Ver servicios contratados, solo Consumer (Opción 14)
-  * GET /usuario/hire
+* Ver servicios contratados
+  * `GET /usuario/hire`
   * Requiere JWT (Consumer)
 
-* Exportar perfil a CSV (Opción 15)
-  * GET /usuario/export
-  * Requiere JWT
+* Cancelar un contrato
+  * `DELETE /usuario/hire`
+  * Requiere JWT (Consumer)
+  * Parámetros: Usuario del freelancer, Título del post
 
-* Exportar post a CSV (Opción 16)
-  * GET /posts/export
+
+### Exportación de Datos
+* Exportar perfil actual a csv
+  * `GET /usuario/export/csv`
   * Requiere JWT
-  * Parámetros: Titulo post
+  * Descarga `profile.pdf`
+
+* Exportar perfil actual a pdf
+  * `GET /usuario/export/pdf`
+  * Requiere JWT
+  * Descarga `profile.csv`
+
+* Exportar perfil actual a xml
+  * `GET /usuario/export/xml`
+  * Requiere JWT
+  * Descarga `profile.xml`
+
+* Exportar perfil actual a zip
+  * `GET /usuario/export/zip`
+  * Requiere JWT
+  * Descarga `profile.zip`
+
+* Exportar post específico a csv
+  * `GET /posts/export/csv`
+  * Requiere JWT
+  * Parámetros: Título del post
+  * Descarga `post.csv`
+
+* Exportar post específico a pdf
+  * `GET /posts/export/pdf`
+  * Requiere JWT
+  * Parámetros: Título del post
+  * Descarga `post.pdf`
+
+* Exportar post específico a xml
+  * `GET /posts/export/xml`
+  * Requiere JWT
+  * Parámetros: Título del post
+  * Descarga `post.xml`
+
+* Exportar post específico a zip
+  * `GET /posts/export/zip`
+  * Requiere JWT
+  * Parámetros: Título del post
+    * Descarga `post.zip`
+
+
+### Funcionalidades Administrativas (Solo Admin)
+* Forzar eliminación de una cuenta
+  * `DELETE /admin`
+  * Requiere JWT (Admin)
+  * Parámetros: Usuario a eliminar
+
+* Forzar eliminación de un post
+  * 'adawda'
+  * Requiere JWT (Admin)
+  * Parámetros: Usuario del freelancer, nombre del post

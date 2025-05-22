@@ -1,7 +1,23 @@
 from typing import Optional, Self
-from generic_posts import Post
-from file_utils import CSVFile, Path
+from .generic_posts import Post
+from file_utils import CSVFile, Path, PDFFile, PDFOffer
+from db import Database, SixerrDB
 
+def _init(_self: 'Offer', db: Database) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
+    type(_self).offer_feed[_self.title] = {"type": "offer", "description": _self.description,
+                                         "user": _self.user, "price": _self.price, 'category': _self.category}
+
+@Database.register(
+    db=SixerrDB(),
+    table='offer',
+    map={'price':'price'},
+    init=_init
+)
 class Offer(Post):
     """
     Class representing an offer, inheriting from Publication.
@@ -16,7 +32,7 @@ class Offer(Post):
     display_information() -> str
         Displays the complete information of the offer.
     """
-
+    offer_feed: dict[str,dict[str,str]] = {}
     def __init__(self, title: str, description: str, user: str, image: Optional[str]=None, price: float=0) -> None:
         """
         Initializes an Offer instance.
@@ -36,9 +52,23 @@ class Offer(Post):
         """
         super().__init__(title, description, user, image)
         self.price = price
+        type(self).offer_feed[self.title] = {"type": "offer", "description": self.description,
+                                             "user": self.user, "price": self.price, 'category': self.category}
+
+    def add_category(self, category: str) -> None:
+        """
+        Adds a category to the offer, using super().add_category, also adds the category to 'offer_feed'.
+
+        Parameters
+        ----------
+        category : str
+            Category to be added.
+        """
+        super().add_category(category)
+        type(self).offer_feed[self.title]['category'] = category
 
     @classmethod
-    def import_post(cls, path: str | Path) -> Self:
+    def import_post_csv(cls, path: str | Path) -> Self:
         """
         Imports a post from a CSV file.  (Must be implemented in subclasses)
 
@@ -67,6 +97,21 @@ class Offer(Post):
 
         return obj
 
+
+    def export_post_pdf(self, tempdir) -> str:
+        f = PDFFile(f'{tempdir}/Post.pdf')
+        pdf_content = PDFOffer(
+            title=self.title,
+            description=self.description,
+            user=self.user,
+            image=self.image,
+            price=self.price,
+            publication_date=self.publication_date,
+            category=self.category
+        )
+        f.write(pdf_content)
+        return f.path.absolute
+
     def display_information(self) -> str:
         """
         Displays the complete information of the offer, including the price.
@@ -77,4 +122,4 @@ class Offer(Post):
             Detailed information about the offer.
         """
         base_info = super().display_information()
-        return f'{base_info}, Price: {self.price}'
+        return f'{base_info}\nPrice: {self.price}'

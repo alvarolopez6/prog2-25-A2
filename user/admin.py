@@ -1,6 +1,14 @@
-from user import User
-from generic_posts import Post
+from typing import Self
+from file_utils import Path
+from post.generic_posts import Post
+from db import SixerrDB, Database
+from .user import User
 
+@Database.register(
+    db=SixerrDB(),
+    table='admins',
+    map={}
+)
 class Admin(User):
     """
     Class that represent an Admin user.
@@ -59,18 +67,40 @@ class Admin(User):
         username: str
             String with the username to be deleted
         """
-        User.usuarios.pop(username)
+        del User.usuarios[username]
+
+    def export_user_pdf(self, tempdir: str) -> str:
+        """
+        Export the user data to a PDF file.
+
+        Creates a PDF document containing the user's data and saves it in the specified
+        temporary directory.
+
+        Parameters
+        ----------
+        tempdir : str
+            Path to the temporary directory where the PDF file will be saved.
+
+        Returns
+        -------
+        str
+            Path to the generated PDF file.
+        """
+        pass
 
     @staticmethod
-    def delete_post(post_name: str) -> None:
+    def delete_post(post_autor: str, post_name: str) -> None:
         """
         Deletes a post by their name
 
         Parameters
         ----------
+        post_autor: str
+            String with the name of the autor of the post.
         post_name: str
             String with the name of the post to be deleted
         """
-        for post in Post.post_set:
-            if post.title == post_name:
-                del post
+        for i in Post.posts[post_autor]:
+            if i.title == post_name:
+                Post.posts[post_autor].discard(i)
+                break

@@ -1,7 +1,43 @@
-from user import User
-from offer import Offer
-from demand import Demand
+from typing import Self
 
+from .user import User
+from post.demand import Demand
+from file_utils import PDFFile, PDFFreelancer, XMLFile, Path
+
+from db import SixerrDB, Database
+
+def _init(_self, db) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
+    _self.__dict__['demandas_contratadas']: set[Demand] = set()
+    for post in db.retrieve(Demand, {'contractor': SixerrDB().get_user(_self)}):
+        _self.__dict__['demandas_contratadas'].add(post)
+
+    if ('opiniones' in _self.__dict__) and (_self.__dict__['opiniones']):
+        _self.__dict__['opiniones'] = list(_self.__dict__['opiniones'])
+    else:
+        _self.__dict__['opiniones'] = []
+
+def _store(_self, db) -> None:
+    """
+    Stores the object's attributes which do not fit in usual table columns
+    """
+    for demanda in _self.demandas_contratadas:
+        db.store(demanda)
+
+@Database.register(
+    db=SixerrDB(),
+    table='freelancers',
+    map={
+        'rating':'rating',
+        'opinions':'opiniones',
+        'abilities':'habilidades'
+    },
+    init=_init, store=_store
+)
 class Freelancer(User):
     """
         Clase that represent the freelancer, who are the users which have the abilities to offer a job in exchange of
@@ -43,7 +79,7 @@ class Freelancer(User):
         """
 
 
-    def __init__(self, username:str, nombre:str, password:str, email:str, telefono:str=None, habilidades:list[str]=None, opiniones: list[int]=None) -> None:
+    def __init__(self, username:str, nombre:str, password:str, email:str, money:float = 0,telefono:str=None, habilidades:list[str]=None, opiniones: list[int]=None) -> None:
         """
             Initializes a Freelancer instance
 
@@ -57,6 +93,8 @@ class Freelancer(User):
                 an unique code that allows you to access to a certain account (hash system)
             email: str
                 a string which provides more information about emails of users
+            money: float
+                a float that stores user's money
             telefono: str
                 an int that represents the phone number of users
             habilidades: list[str]
@@ -65,7 +103,7 @@ class Freelancer(User):
                 a list of numbers that represent the ratings of the customers
 
         """
-        super().__init__(username, nombre, password, email, telefono)
+        super().__init__(username, nombre, password, email, money, telefono)
         self.habilidades = habilidades
         self.demandas_contratadas: set[Demand] = set()
         self.opiniones = opiniones if opiniones is not None else []
@@ -83,19 +121,47 @@ class Freelancer(User):
 
         """
         self.opiniones.append(resenya)
-        print("HAS AÑADIDO LA RESEÑA CON")
-        self.rating = sum(self.opiniones) / len(self.opiniones)
+        self.rating = sum(map(lambda x:float(x),self.opiniones)) / len(self.opiniones)
 
     def mostrar_info(self) -> str:
         """
-
         Method that uses the super info from User and extend it with its own information
-
         """
         info=super().mostrar_info()
-        return info + f' Habilidades: {self.habilidades} Rating: {self.rating} NºPosts: {len(self.posts)}'
+        return info + f'\nHabilidades: {self.habilidades}\nRating: {self.rating}\nNºPosts: {len(self.posts)}{f'\nOpiniones:{self.opiniones}' if self.opiniones else ''}'
 
-    def contratar_demanda(self,demanda):
+    def export_user_pdf(self, tempdir) -> str:
+        f = PDFFile(f'{tempdir}/User.pdf')
+        pdf_content = PDFFreelancer(
+            username=self.username,
+            nombre=self.nombre,
+            email=self.email,
+            telefono=self.telefono,
+            posts=self.posts,
+            habilidades=self.habilidades,
+            opiniones=self.opiniones,
+            rating=self.rating,
+            money=self.money
+        )
+        f.write(pdf_content)
+        return f.path.absolute
+
+    @classmethod
+    def import_user_csv(cls, path: str | Path) -> Self:
+        pass
+
+    @classmethod
+    def import_user_xml(cls, path: str | Path) -> Self:
+        f = XMLFile(path)
+        obj = cls.__new__(cls)
+        for key, value in f.read().items():
+            if key == 'type' and value != 'Freelancer':
+                raise NotImplementedError('User type is not Freelancer')
+            setattr(obj, key, value)
+
+        return obj
+
+    def contratar_demanda(self, demanda):
         """
         A Method that allows to accept a demand from an costumer
 

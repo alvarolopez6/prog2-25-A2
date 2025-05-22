@@ -1,20 +1,46 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Self
 from datetime import datetime
-from file_utils import CSVFile, Path
-'''
+from file_utils import CSVFile, Path, XMLFile
+from db import Database, SixerrDB
+import multiprocessing as mp
+import tempfile
+import zipfile
+
+try:
+    import zlib
+    compression = zipfile.ZIP_DEFLATED
+except ImportError:
+    compression = zipfile.ZIP_STORED
+
+modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
+
+
+
+def _init(_self: 'Post', db: Database) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
+    if _self.user in Post.posts:
+        Post.posts[_self.user].add(_self)
+    else:
+        Post.posts[_self.user] = {_self}
+
+
 @Database.register(
+    db=SixerrDB(),
     table='posts',
     map={
-        'user':'user',
+        'username':'user',
         'title':'title',
         'fecha':'publication_date',
         'description':'description',
         'image':'image',
-        'categories':'categories'
-}
+        'category':'category'
+    }, init=_init
 )
-'''
 class Post(ABC):
     """
     Abstract class representing a generic publication.
@@ -64,7 +90,7 @@ class Post(ABC):
         "Technology", "Computer Science", "Programming", "Robotics", "Astronomy",
         "Sports", "Health", "Philosophy", "Psychology", "Economics"
     }
-    posts: dict[str, set] = {}
+    posts: dict[str, set[Self]] = {}
 
     def __init__(self, title: str, description: str, user: str, image: Optional[str] = None) -> None:
         """
@@ -85,7 +111,7 @@ class Post(ABC):
         self.description = description
         self.user = user
         self.image = image
-        self.publication_date = datetime.now().date()
+        self.publication_date = str(datetime.now().date())
         self.category = None
 
         if user in Post.posts:
@@ -128,20 +154,19 @@ class Post(ABC):
         """
         return self.category
 
-    def export_post(self) -> Path:
+    def export_post_csv(self, tempdir) -> str:
         """
         Gets a post data and exports it to a CSV file
 
         Returns
         -------
-        Path
-            System path to the file
+        str
+            Absolute System path to the file
         """
         post_keys: list[str] = [key for key in self.__dict__.keys()]
         post_keys.append('post_type')
         post_values: list[str] = [value for value in self.__dict__.values()]
-        file_name = f'{self.title}_{datetime.now().strftime("%Y%m%d")}.csv'
-        f = CSVFile(f'data/{file_name}')
+        f = CSVFile(f'{tempdir}/Post.csv')
         if type(self).__name__ == 'Offer':
             post_values.append('Offer')
         elif type(self).__name__ == 'Demand':
@@ -150,28 +175,69 @@ class Post(ABC):
         f.write(post_values)
         return f.path.absolute
 
-    @classmethod
     @abstractmethod
-    def import_post(cls, path: str | Path) -> Self:
+    def export_post_pdf(self, tempdir) -> str:
         """
-        Imports a post from a CSV file.  (Must be implemented in subclasses)
-
-        To avoid unwanted behaviours CSV headers must be: (¡post_type must be last column!)
-        title,description,user,image,publication_date,category,price/demand,post_type
-
-        Parameters
-        ----------
-        path: str | Path
-            Path to the CSV file.
+        Gets a post data and exports it to a PDF file. (Must be implemented in subclasses)
 
         Returns
         -------
-        Post Instance
+        str
+            Absolute System path to the file
         """
         pass
 
+    def export_post_xml(self, tempdir) -> str:
+        """
+        Gets post's data and exports it to a XML file.
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        f = XMLFile(f'{tempdir}/Post.xml')
+        f.gen_tree('SixerrData')
+        data_dict = {'type': type(self).__name__, **self.__dict__,
+                     'publication_date': self.publication_date.strftime('%Y/%m/%d')}
+        f.write(data_dict)
+        f.indent()
+        return f.path.absolute
+
+    def export_post(self) -> str:
+        """
+        Gets a post data and exports it to a ZIP file with a .csv, .pdf, and .xml files inside.
+
+        Returns
+        -------
+        str
+            Absolute System path to the file
+        """
+        funcs = [self.export_post_csv, self.export_post_pdf, self.export_post_xml]
+        proccess: list[mp.Process] = []
+
+        temp_dir = tempfile.gettempdir()
+
+        for f in funcs:
+            p = mp.Process(target=f, args=(temp_dir,))
+            proccess.append(p)
+            p.start()
+
+        for p in proccess:
+            p.join()
+
+        file_name = f'{self.title}_{datetime.now().strftime("%Y%m%d")}.zip'
+        zip_file = Path(f'{temp_dir}/{file_name}')
+
+        with zipfile.ZipFile(zip_file.absolute, 'w') as z:
+            z.write(Path(f'{temp_dir}/Post.csv').absolute, self.title + '.csv', compress_type=compression)
+            z.write(Path(f'{temp_dir}/Post.pdf').absolute, self.title + '.pdf', compress_type=compression)
+            z.write(Path(f'{temp_dir}/Post.xml').absolute, self.title + '.xml', compress_type=compression)
+
+        return zip_file.absolute
+
     @abstractmethod
-    def display_information(self) -> str: # Usar __str__()
+    def display_information(self) -> str:
         """
         Abstract method to display the publication's information.
 
@@ -180,7 +246,9 @@ class Post(ABC):
         str
             Detailed information about the publication.
         """
-        return f'Title: {self.title}, Description: {self.description}, Publication date: {self.publication_date}, User: {self.user}, Category: {self.category if self.category is not None else "No category"}'
+        return (f'Title: {self.title}\nDescription: {self.description}'
+                f'\nPublication date: {self.publication_date}\nUser: {self.user}'
+                f'\nCategory: {self.category if self.category else "No category"}')
 
     @classmethod
     def get_post(cls, user: str, title: str) -> Self | None:

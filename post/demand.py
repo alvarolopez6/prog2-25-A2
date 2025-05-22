@@ -1,7 +1,23 @@
-from generic_posts import Post
+from .generic_posts import Post
 from typing import Optional, Self
-from file_utils import CSVFile, Path
+from file_utils import CSVFile, Path, PDFFile, PDFDemand
+from db import Database, SixerrDB
 
+def _init(_self: 'Demand', db: Database) -> None:
+    """
+    Initializes the object instance when created externally
+
+    In the process of external creation the object gets infused with data and outside initialized.
+    """
+    type(_self).demand_feed[_self.title] = {'type': 'demand', 'description': _self.description,
+                                          'user': _self.user, 'urgency': _self.urgency, 'category': _self.category}
+
+@Database.register(
+    db=SixerrDB(),
+    table='demand',
+    map={'urgency':'urgency'},
+    init=_init
+)
 class Demand(Post):
     """
     Class representing a demand, inheriting from Publication.
@@ -17,6 +33,7 @@ class Demand(Post):
         Displays the complete information of the demand.
     """
 
+    demand_feed: dict[str,dict[str,str]] = {}
     def __init__(self, title: str, description: str, user: str, image: Optional[str]=None, urgency: int=3) -> None:
         """
         Initializes a Demand instance.
@@ -36,9 +53,23 @@ class Demand(Post):
         """
         super().__init__(title, description, user, image)
         self.urgency = urgency
+        type(self).demand_feed[self.title] = {'type': 'demand', 'description': self.description,
+                                              'user': self.user, 'urgency': self.urgency, 'category': self.category}
+
+    def add_category(self, category: str) -> None:
+        """
+        Adds a category to the demand.
+
+        Parameters
+        ----------
+        category : str
+            Category of the demand to be added.
+        """
+        super().add_category(category)
+        type(self).demand_feed[self.title]['category'] = category
 
     @classmethod
-    def import_post(cls, path: str | Path) -> Self: # from_csv()
+    def import_post_csv(cls, path: str | Path) -> Self: # from_csv()
         """
         Imports a post from a CSV file.  (Must be implemented in subclasses)
 
@@ -66,6 +97,32 @@ class Demand(Post):
                     setattr(obj, f.headers[i], value)
         return obj
 
+    def export_post_pdf(self, tempdir) -> str:
+        """
+        Gets all Demand's info and exports it into a PDF file.
+
+        Parameters
+        ----------
+        tempdir: str
+            Directory to save the PDF file.
+
+        Returns
+        -------
+        str
+            Absolute system path to a PDF file.
+        """
+        f = PDFFile(f'{tempdir}/Post.pdf')
+        pdf_content = PDFDemand(
+            title=self.title,
+            description=self.description,
+            user=self.user,
+            image=self.image,
+            urgency=self.urgency,
+            publication_date=self.publication_date,
+            category=self.category
+        )
+        f.write(pdf_content)
+        return f.path.absolute
 
 
     def display_information(self) -> str:
